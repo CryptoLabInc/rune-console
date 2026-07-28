@@ -21,6 +21,7 @@ import RenameTeamModal from "@/components/teams/RenameTeamModal";
 import RoleChangeConfirmModal from "@/components/teams/RoleChangeConfirmModal";
 import { ROLE_OPTIONS } from "@/components/teams/teamOptions";
 import TeamTree from "@/components/tree/TeamTree";
+import { CHIP_STATUS } from "@/components/users/memberStatusMap";
 import {
   useAddTeamMemberMutation,
   useBulkRoleChangeMutation,
@@ -34,7 +35,6 @@ import {
 import { useTeamMembersQuery } from "@/hooks/queries/useTeamMembersQuery";
 import { useTeamQuery } from "@/hooks/queries/useTeamQuery";
 import { parseErrorCode } from "@/api/parseError";
-import { CHIP_STATUS } from "@/components/users/memberStatusMap";
 import { formatDate } from "@/utils/formatDate";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import type { TTeamNode } from "@/types/commonTypes";
@@ -139,7 +139,7 @@ const TreeDetailView = ({
   const flatById = new Map(teams.map((t) => [t.id, t]));
   const teamNodes = buildTeamNodes(teams, null);
   /* Fallback selection — the first top-level team (SC-06 entry rule). */
-  const defaultTeam = findTeamNode(teamNodes, "t_a") ?? teamNodes[0];
+  const defaultTeam = teamNodes[0];
 
   const selectedTeam = findTeamNode(teamNodes, selectedTeamId) ?? defaultTeam;
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -476,11 +476,7 @@ const TreeDetailView = ({
           query={teamSearch}
           selectedId={selectedTeam.id}
           onSelect={(node) => onSelectTeam(node.id)}
-          defaultExpandedIds={[
-            "t_a",
-            "t_e",
-            ...ancestorIds(teams, selectedTeam.id),
-          ]}
+          defaultExpandedIds={ancestorIds(teams, selectedTeam.id)}
           className="-mx-1 flex-1"
         />
       </aside>

@@ -1,8 +1,3 @@
-export type TAlert = {
-  title: string;
-  content: string;
-};
-
 /** Option shape for the shared Dropdown element (UIKIT AdminOption). */
 export type TDropdownOption = {
   value: string;
