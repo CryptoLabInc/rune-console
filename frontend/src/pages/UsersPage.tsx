@@ -36,7 +36,10 @@ import { useUserQuery } from "@/hooks/queries/useUserQuery";
 import { useUsersQuery } from "@/hooks/queries/useUsersQuery";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { parseErrorCode } from "@/api/parseError";
-import { BTN_TEXT } from "@/constants/commonConstants";
+import { ERROR_CODES, SESSION_STATUS } from "@/constants/apiConstants";
+import { BTN_TEXT, DEFAULT_PAGE_SIZE } from "@/constants/commonConstants";
+import { BATCH_REASON } from "@/constants/errorConstants";
+import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import type { TDropdownOption } from "@/types/commonTypes";
 import type { TTeamMemberRole, TTeamTree } from "@/types/teamTypes";
 import type {
@@ -60,8 +63,8 @@ const styles = {
    shows only the session axis, so the filter matches it. */
 const STATUS_OPTIONS: TDropdownOption[] = [
   { value: "all", label: "전체" },
-  { value: "online", label: "온라인" },
-  { value: "offline", label: "오프라인" },
+  { value: SESSION_STATUS.online, label: "온라인" },
+  { value: SESSION_STATUS.offline, label: "오프라인" },
 ];
 
 /* Depth indent stripped — the 150px filter trigger can't fit deep-tree
@@ -85,15 +88,6 @@ const membershipSummary = (user: TUserListItem) => {
   return first
     ? { summary: `${first.teamName} · ${first.role}`, extra: rest.length }
     : { summary: "—", extra: 0 };
-};
-
-/* 10 rows per page — caps the table height inside one screen; also the
-   ?size=10 GET /users query param. */
-const PAGE_SIZE = 10;
-
-/** Batch-delete failure reasons shown by account (DELETE /users). */
-const BATCH_REASON: Record<string, string> = {
-  USER_NOT_FOUND: "사용자를 찾을 수 없습니다",
 };
 
 /**
@@ -140,11 +134,11 @@ const UsersPage = () => {
     teamId: groupFilter,
     sort,
     page,
-    size: PAGE_SIZE,
+    size: DEFAULT_PAGE_SIZE,
   });
   const users = usersQuery.data?.items ?? [];
   const total = usersQuery.data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(total / DEFAULT_PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
 
   /* keep the requested page within range so the query never asks for an out-of-range page */
@@ -221,7 +215,9 @@ const UsersPage = () => {
     } catch (err) {
       if (err instanceof Response) {
         const code = await parseErrorCode(err);
-        return code === "ALREADY_TEAM_MEMBER" ? "duplicate-account" : "error";
+        return code === ERROR_CODES.ALREADY_TEAM_MEMBER
+          ? "duplicate-account"
+          : "error";
       }
       return "error";
     }
@@ -235,11 +231,18 @@ const UsersPage = () => {
     );
     const failed = targets.filter((_, i) => results[i].status === "rejected");
     if (failed.length === 0) {
-      showNotice("초대 코드 재전송", "초대 코드를 재전송했습니다.", "info");
+      showNotice(
+        NOTICE_TEXT.resendInvitation.title,
+        NOTICE_TEXT.resendInvitation.success,
+        "info",
+      );
       return;
     }
     setBatchFailures(
-      failed.map((u) => ({ account: u.account, reason: "재전송 실패" })),
+      failed.map((u) => ({
+        account: u.account,
+        reason: NOTICE_TEXT.resendInvitation.failedReason,
+      })),
     );
   };
 
@@ -266,7 +269,11 @@ const UsersPage = () => {
     }
 
     if (result.failed.length === 0) {
-      showNotice("멤버 삭제", "멤버를 삭제했습니다.", "info");
+      showNotice(
+        NOTICE_TEXT.deleteMember.title,
+        NOTICE_TEXT.deleteMember.success,
+        "info",
+      );
       return;
     }
     if (succeededIds.length === 0) {
@@ -420,7 +427,7 @@ const UsersPage = () => {
         }
         foot={
           <TableFoot
-            info={`총 ${total}명 · ${PAGE_SIZE}명/페이지`}
+            info={`총 ${total}명 · ${DEFAULT_PAGE_SIZE}명/페이지`}
             className="flex-row"
           >
             <Pagination

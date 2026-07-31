@@ -3,6 +3,11 @@
  * Visual values are translated from UIKIT modules/rune-ui-buttons and
  * modules/rune-admin-kit CSS — UIKIT is the design source of truth.
  */
+import type { TMemberStatus, TWorkspaceStatus } from "@/types/commonTypes";
+import type { TInvitationStatus } from "@/types/teamTypes";
+
+/** Status → chip/badge presentation (label + text color). */
+type TStatusStyle = { label: string; color: string };
 
 /* Form controls embed w-full: the parent container constrains width.
    Metrics are UIKIT values normalized to even px (project rule). */
@@ -79,18 +84,20 @@ export const BADGE_TONE_VAR = {
   neutral: "bg-muted-foreground/12 text-muted-foreground",
 } as const;
 
-/* Session chips — the only status a list view shows. */
+/* Session chips — the only status a list view shows. The satisfies clause
+   keys this map to the status union: adding/renaming a status value is a
+   compile error here until the label map follows. */
 export const MEMBER_STATUS_VAR = {
   online: { label: "온라인", color: "text-mint" },
   offline: { label: "오프라인", color: "text-faint" },
-} as const;
+} as const satisfies Record<TMemberStatus, TStatusStyle>;
 
 /* Invitation-status labels — shown only in the member detail drawer. */
 export const INVITATION_STATUS_VAR = {
   invite_pending: { label: "초대 수락 대기", color: "text-warning" },
   invite_expired: { label: "초대 코드 만료", color: "text-faint" },
   invite_redeemed: { label: "초대 코드 사용됨", color: "text-accent-blue" },
-} as const;
+} as const satisfies Record<TInvitationStatus, TStatusStyle>;
 
 export const WORKSPACE_STATUS_VAR = {
   provisioning: { label: "생성 중", color: "text-warning" },
@@ -100,4 +107,4 @@ export const WORKSPACE_STATUS_VAR = {
   starting: { label: "재실행 중", color: "text-warning" },
   deleting: { label: "삭제 중", color: "text-warning" },
   error: { label: "사용 불가", color: "text-negative" },
-} as const;
+} as const satisfies Record<TWorkspaceStatus, TStatusStyle>;

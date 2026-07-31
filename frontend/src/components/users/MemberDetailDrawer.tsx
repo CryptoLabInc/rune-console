@@ -23,7 +23,17 @@ import RoleChangeConfirmModal from "@/components/users/RoleChangeConfirmModal";
 import SessionDeactivateModal from "@/components/users/SessionDeactivateModal";
 import { parseErrorCode } from "@/api/parseError";
 import { formatDate, formatDateTime } from "@/utils/formatDate";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
+import {
+  ERROR_CODES,
+  INVITATION_STATUS,
+  SESSION_STATUS,
+} from "@/constants/apiConstants";
+import { BTN_TEXT } from "@/constants/commonConstants";
+import {
+  BATCH_REASON,
+  BATCH_REASON_FALLBACK,
+} from "@/constants/errorConstants";
+import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import { INVITATION_STATUS_VAR } from "@/constants/styleConstants";
 import type { TBatchResult, TTeamTree } from "@/types/teamTypes";
 import type { TUserListItem } from "@/types/userTypes";
@@ -46,14 +56,14 @@ const styles = {
 /** Per-status header timestamp (SC-13 no.1 — D13). Session takes priority:
     an online member shows last access; otherwise the invitation axis drives it. */
 const subtitleFor = (user: TUserListItem): string => {
-  if (user.sessionStatus === "online") {
+  if (user.sessionStatus === SESSION_STATUS.online) {
     return `최근 접속 ${formatDate(user.lastAccessAt)}`;
   }
   switch (user.invitationStatus) {
-    case "invite_redeemed":
+    case INVITATION_STATUS.redeemed:
       return "초대 코드 사용됨 · 연결 대기 중";
-    case "invite_pending":
-    case "invite_expired":
+    case INVITATION_STATUS.pending:
+    case INVITATION_STATUS.expired:
       return `최근 초대 코드 발송 ${formatDateTime(user.lastInvitedAt)}`;
   }
 };
@@ -74,16 +84,6 @@ type TDrawerModal =
   | "deactivate"
   | "cancel-invitation"
   | null;
-
-/** Batch-endpoint failure reasons shown by team name (SC-13 — shared
-    with the team-side codes; the drawer only ever sees these two). */
-const BATCH_REASON: Record<string, string> = {
-  TEAM_NOT_FOUND: "팀을 찾을 수 없습니다",
-  NOT_TEAM_MEMBER: "팀 멤버가 아닙니다",
-};
-// Any other code (e.g. a transient INTERNAL) shows a generic retry message
-// rather than leaking the raw backend code into the failure modal.
-const BATCH_REASON_FALLBACK = "처리에 실패했습니다. 다시 시도해 주세요.";
 
 interface MemberDetailDrawerProps {
   user: TUserListItem;
@@ -178,11 +178,15 @@ const MemberDetailDrawer = ({
     setResending(true);
     try {
       await onResendCode();
-      showNotice("초대 코드 재전송", "초대 코드를 재전송했습니다.", "info");
+      showNotice(
+        NOTICE_TEXT.resendInvitation.title,
+        NOTICE_TEXT.resendInvitation.success,
+        "info",
+      );
     } catch {
       showNotice(
-        "초대 코드 재전송",
-        "초대 코드 재전송에 실패했습니다. 다시 시도해 주세요.",
+        NOTICE_TEXT.resendInvitation.title,
+        NOTICE_TEXT.resendInvitation.failure,
         "error",
       );
     } finally {
@@ -222,15 +226,19 @@ const MemberDetailDrawer = ({
           checked: false,
         },
       ]);
-      showNotice("팀 추가", "팀에 추가되었습니다.", "info");
+      showNotice(
+        NOTICE_TEXT.addMembership.title,
+        NOTICE_TEXT.addMembership.success,
+        "info",
+      );
       resetAdd();
     } catch (err) {
       const code = err instanceof Response ? await parseErrorCode(err) : "";
       showNotice(
-        "팀 추가",
-        code === "ALREADY_TEAM_MEMBER"
-          ? "이미 소속된 팀입니다."
-          : "팀 추가에 실패했습니다. 다시 시도해 주세요.",
+        NOTICE_TEXT.addMembership.title,
+        code === ERROR_CODES.ALREADY_TEAM_MEMBER
+          ? NOTICE_TEXT.addMembership.alreadyMember
+          : NOTICE_TEXT.addMembership.failure,
         "error",
       );
     } finally {
@@ -284,7 +292,7 @@ const MemberDetailDrawer = ({
                 btnSize="sm"
                 btnColor="grayOutline"
                 className="w-fit"
-                disabled={user.invitationStatus !== "invite_pending"}
+                disabled={user.invitationStatus !== INVITATION_STATUS.pending}
                 handleClick={() => setOpenModal("cancel-invitation")}
               />
             </div>
@@ -448,7 +456,7 @@ const MemberDetailDrawer = ({
               btnSize="sm"
               btnColor="redOutline"
               className="w-fit"
-              disabled={user.sessionStatus !== "online"}
+              disabled={user.sessionStatus !== SESSION_STATUS.online}
               handleClick={() => setOpenModal("deactivate")}
             />
             <Button
@@ -519,8 +527,8 @@ const MemberDetailDrawer = ({
             );
             if (result.failed.length === 0) {
               showNotice(
-                MODAL_TITLES.removeMembership,
-                "멤버십이 제거되었습니다.",
+                NOTICE_TEXT.removeMembership.title,
+                NOTICE_TEXT.removeMembership.success,
                 "success",
               );
             } else {
@@ -561,16 +569,20 @@ const MemberDetailDrawer = ({
             try {
               await onDeactivateSession();
               setOpenModal(null);
-              showNotice("세션 비활성화", "세션을 비활성화했습니다.", "info");
+              showNotice(
+                NOTICE_TEXT.deactivateSession.title,
+                NOTICE_TEXT.deactivateSession.success,
+                "info",
+              );
             } catch (err) {
               const code =
                 err instanceof Response ? await parseErrorCode(err) : "";
               setOpenModal(null);
               showNotice(
-                "세션 비활성화",
-                code === "SESSION_NOT_ACTIVE"
-                  ? "이미 만료된 세션입니다."
-                  : "세션 비활성화에 실패했습니다. 다시 시도해 주세요.",
+                NOTICE_TEXT.deactivateSession.title,
+                code === ERROR_CODES.SESSION_NOT_ACTIVE
+                  ? NOTICE_TEXT.deactivateSession.alreadyExpired
+                  : NOTICE_TEXT.deactivateSession.failure,
                 "error",
               );
             }
@@ -586,16 +598,20 @@ const MemberDetailDrawer = ({
             try {
               await onCancelInvitation();
               setOpenModal(null);
-              showNotice("초대 취소", "초대를 취소했습니다.", "info");
+              showNotice(
+                NOTICE_TEXT.cancelInvitation.title,
+                NOTICE_TEXT.cancelInvitation.success,
+                "info",
+              );
             } catch (err) {
               const code =
                 err instanceof Response ? await parseErrorCode(err) : "";
               setOpenModal(null);
               showNotice(
-                "초대 취소",
-                code === "INVITATION_NOT_PENDING"
-                  ? "취소할 초대가 없습니다."
-                  : "초대 취소에 실패했습니다. 다시 시도해 주세요.",
+                NOTICE_TEXT.cancelInvitation.title,
+                code === ERROR_CODES.INVITATION_NOT_PENDING
+                  ? NOTICE_TEXT.cancelInvitation.nothingToCancel
+                  : NOTICE_TEXT.cancelInvitation.failure,
                 "error",
               );
             }

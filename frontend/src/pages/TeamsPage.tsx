@@ -12,13 +12,9 @@ import { useTeamsTreeQuery } from "@/hooks/queries/useTeamsTreeQuery";
 import { parseErrorCode } from "@/api/parseError";
 import { cn } from "@/utils/cn";
 import { BTN_TEXT } from "@/constants/commonConstants";
+import { TEAM_REASON } from "@/constants/errorConstants";
+import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import { useNoticeStore } from "@/stores/noticeStore";
-
-/** Create-team error codes → SC-07 copy (shared with TreeDetailView). */
-const CREATE_TEAM_REASON: Record<string, string> = {
-  TEAM_NAME_DUPLICATE: "같은 상위 팀에 동일한 이름이 이미 있습니다.",
-  TEAM_NAME_INVALID: "팀 이름 형식이 올바르지 않습니다.",
-};
 
 const feedbackPanel =
   "m-6 flex min-h-[340px] flex-col items-center justify-center gap-3 text-center";
@@ -70,11 +66,15 @@ const TeamsPage = () => {
       {
         onSuccess: () => {
           setCreateOpen(false);
-          showNotice("팀 생성", "팀이 생성되었습니다.", "success");
+          showNotice(
+            NOTICE_TEXT.createTeam.title,
+            NOTICE_TEXT.createTeam.success,
+            "success",
+          );
         },
         onError: async (res) => {
           const code = await parseErrorCode(res);
-          setCreateError(CREATE_TEAM_REASON[code] ?? "팀 생성에 실패했습니다.");
+          setCreateError(TEAM_REASON[code] ?? "팀 생성에 실패했습니다.");
         },
       },
     );

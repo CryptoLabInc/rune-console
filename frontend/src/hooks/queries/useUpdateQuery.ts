@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { getSystemUpdate } from "@/api/updateAPIs";
+import { SYSTEM_UPDATE_STATE } from "@/constants/apiConstants";
 import { QUERY_KEYS } from "@/constants/commonConstants";
 import type { TSystemUpdateStatus } from "@/types/updateTypes";
 
@@ -8,7 +9,7 @@ const ACTIVE_POLL_MS = 2000;
 const IDLE_POLL_MS = 60 * 60 * 1000;
 
 export const isSystemUpdateActive = (state: TSystemUpdateStatus["state"]) =>
-  state === "queued" || state === "running";
+  state === SYSTEM_UPDATE_STATE.queued || state === SYSTEM_UPDATE_STATE.running;
 
 /**
  * Checks for a release without disturbing the app when GitHub or the local

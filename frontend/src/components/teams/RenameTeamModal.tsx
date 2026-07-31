@@ -9,6 +9,7 @@ import {
   TEAM_NAME_RULE_TEXT,
 } from "@/components/teams/teamOptions";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
+import { TEAM_NAME_DUPLICATE_TEXT } from "@/constants/errorConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 
 interface RenameTeamModalProps {
@@ -58,7 +59,7 @@ const RenameTeamModal = ({
   const nameError = isInvalidFormat
     ? TEAM_NAME_RULE_TEXT
     : isDuplicate
-      ? "같은 상위 팀에 동일한 이름이 이미 있습니다."
+      ? TEAM_NAME_DUPLICATE_TEXT
       : undefined;
 
   return (
