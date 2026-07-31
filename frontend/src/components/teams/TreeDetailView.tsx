@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import Button from "@/components/elements/Button";
 import Checkbox from "@/components/elements/Checkbox";
@@ -81,20 +81,25 @@ type TActiveModal =
 /**
  * GET /teams/tree returns flat nodes — the client builds the recursive
  * TTeamNode shape the TeamTree component consumes (API design §3).
+ * Single pass over a children index (not a filter per parent), so the
+ * build stays linear in team count.
  */
-const buildTeamNodes = (
-  teams: TTeamTree,
-  parentId: string | null,
-): TTeamNode[] =>
-  teams
-    .filter((team) => team.parentId === parentId)
-    .map((team) => ({
+const buildTeamNodes = (teams: TTeamTree): TTeamNode[] => {
+  const childrenOf = new Map<string | null, TTeamTree>();
+  for (const team of teams) {
+    const siblings = childrenOf.get(team.parentId);
+    if (siblings) siblings.push(team);
+    else childrenOf.set(team.parentId, [team]);
+  }
+  const build = (parentId: string | null): TTeamNode[] =>
+    (childrenOf.get(parentId) ?? []).map((team) => ({
       id: team.id,
       name: team.name,
       members: team.memberCount,
-      children:
-        team.childCount > 0 ? buildTeamNodes(teams, team.id) : undefined,
+      children: team.childCount > 0 ? build(team.id) : undefined,
     }));
+  return build(null);
+};
 
 const findTeamNode = (nodes: TTeamNode[], id: string): TTeamNode | undefined =>
   nodes.reduce<TTeamNode | undefined>(
@@ -123,8 +128,10 @@ interface TreeDetailViewProps {
 
 /** Ancestor ids of a team — expanded so a selection handed off from
     the org chart is actually visible in the tree. */
-const ancestorIds = (teams: TTeamTree, teamId: string): string[] => {
-  const flatById = new Map(teams.map((team) => [team.id, team]));
+const ancestorIds = (
+  flatById: Map<string, TTeamTree[number]>,
+  teamId: string,
+): string[] => {
   const ids: string[] = [];
   let parentId = flatById.get(teamId)?.parentId;
   while (parentId) {
@@ -140,8 +147,14 @@ const TreeDetailView = ({
   selectedTeamId,
   onSelectTeam,
 }: TreeDetailViewProps) => {
-  const flatById = new Map(teams.map((t) => [t.id, t]));
-  const teamNodes = buildTeamNodes(teams, null);
+  /* Derived once per teams array — this component re-renders on every
+     keystroke/checkbox/staged edit, and the tree build must not re-run
+     for those (OrgChart applies the same rule). */
+  const flatById = useMemo(
+    () => new Map(teams.map((t) => [t.id, t])),
+    [teams],
+  );
+  const teamNodes = useMemo(() => buildTeamNodes(teams), [teams]);
   /* Fallback selection — the first top-level team (SC-06 entry rule). */
   const defaultTeam = teamNodes[0];
 
@@ -483,7 +496,7 @@ const TreeDetailView = ({
           query={teamSearch}
           selectedId={selectedTeam.id}
           onSelect={(node) => onSelectTeam(node.id)}
-          defaultExpandedIds={ancestorIds(teams, selectedTeam.id)}
+          defaultExpandedIds={ancestorIds(flatById, selectedTeam.id)}
           className="-mx-1 flex-1"
         />
       </aside>
