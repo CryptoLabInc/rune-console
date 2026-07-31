@@ -7,6 +7,11 @@ export const BRAND_WORDMARK = "RUNE CONSOLE";
  * workspace; the SC-02 modal renders usage as rowCount / max (percent). */
 export const WORKSPACE_MAX_MEMORIES = 1000;
 
+/** DEFAULT_PAGE_SIZE is the fixed rows-per-page for every list table
+ * (users, sessions, team members) — caps the table height inside one
+ * screen and goes out as the ?size= query param on the list endpoints. */
+export const DEFAULT_PAGE_SIZE = 10;
+
 /** BTN_TEXT is the single source of truth for visible action-button labels
  * (Button `btnText` / TextButton) across the console screens, so a wording
  * change lands in one place. Icon-button aria-labels are intentionally out of

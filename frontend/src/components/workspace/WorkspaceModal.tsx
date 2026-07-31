@@ -22,6 +22,7 @@ import {
   PATH_LIST,
   WORKSPACE_MAX_MEMORIES,
 } from "@/constants/commonConstants";
+import { WORKSPACE_STATUS } from "@/constants/apiConstants";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 const FAIL_COPY = {
@@ -71,7 +72,7 @@ const WorkspaceModal = () => {
   // connect endpoint the empty-state create uses.
   const reconnectMutation = useCreateWorkspaceMutation();
 
-  const status = workspace?.status ?? "error";
+  const status = workspace?.status ?? WORKSPACE_STATUS.error;
   /* Transitional phases (+ any request in flight) lock the actions. */
   const busy = workspace ? isTransitionalStatus(status) : false;
 
@@ -260,7 +261,7 @@ const WorkspaceModal = () => {
         {/* Lifecycle actions sit at the content's top-right as quiet
             TextButtons — the info fields carry the primary reading weight. */}
         <div className="flex justify-end gap-2">
-          {status === "stopped" ? (
+          {status === WORKSPACE_STATUS.stopped ? (
             <TextButton
               btnText={BTN_TEXT.restart}
               disabled={busy || startMutation.isPending}

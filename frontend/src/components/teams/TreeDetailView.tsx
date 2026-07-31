@@ -36,7 +36,15 @@ import { useTeamMembersQuery } from "@/hooks/queries/useTeamMembersQuery";
 import { useTeamQuery } from "@/hooks/queries/useTeamQuery";
 import { parseErrorCode } from "@/api/parseError";
 import { formatDate } from "@/utils/formatDate";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
+import { TEAM_MEMBER_ROLE } from "@/constants/apiConstants";
+import { BTN_TEXT, DEFAULT_PAGE_SIZE } from "@/constants/commonConstants";
+import {
+  ADD_MEMBER_REASON,
+  BATCH_REASON,
+  BATCH_REASON_FALLBACK,
+  TEAM_REASON,
+} from "@/constants/errorConstants";
+import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import type { TTeamNode } from "@/types/commonTypes";
 import type { TTeamMemberRole, TTeamTree } from "@/types/teamTypes";
 import { useNoticeStore } from "@/stores/noticeStore";
@@ -94,10 +102,6 @@ const findTeamNode = (nodes: TTeamNode[], id: string): TTeamNode | undefined =>
       found ?? (node.id === id ? node : findTeamNode(node.children ?? [], id)),
     undefined,
   );
-
-/* 10 rows per page — caps the member table height inside one screen;
-   the ?size=10 GET /teams/{id}/members query param. */
-const PAGE_SIZE = 10;
 
 /**
  * TreeDetailView is the SC-06 트리·상세 view: team tree panel (left) +
@@ -173,10 +177,14 @@ const TreeDetailView = ({
   }, [selectedTeam.id]);
 
   const { data: detail } = useTeamQuery(selectedTeam.id);
-  const membersQuery = useTeamMembersQuery(selectedTeam.id, page, PAGE_SIZE);
+  const membersQuery = useTeamMembersQuery(
+    selectedTeam.id,
+    page,
+    DEFAULT_PAGE_SIZE,
+  );
   const members = membersQuery.data?.items ?? [];
   const total = membersQuery.data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(total / DEFAULT_PAGE_SIZE));
 
   const addMember = useAddTeamMemberMutation(selectedTeam.id);
   const bulkRole = useBulkRoleChangeMutation(selectedTeam.id);
@@ -237,8 +245,8 @@ const TreeDetailView = ({
     setSavedRoles((prev) => new Map([...prev, ...pendingRoles]));
     setPendingRoles(new Map());
     showNotice(
-      MODAL_TITLES.roleChange,
-      "변경사항이 저장되었습니다.",
+      NOTICE_TEXT.roleChange.title,
+      NOTICE_TEXT.roleChange.success,
       "success",
     );
   };
@@ -260,41 +268,22 @@ const TreeDetailView = ({
     setTeamError(null);
     closeModal();
   };
-  const TEAM_REASON: Record<string, string> = {
-    TEAM_NAME_DUPLICATE: "같은 상위 팀에 동일한 이름이 이미 있습니다.",
-    TEAM_NAME_INVALID: "팀 이름 형식이 올바르지 않습니다.",
-    TEAM_HAS_CHILDREN: "하위 팀이 있어 삭제할 수 없습니다.",
-  };
-
   /* Partial-failure surface for the two batch endpoints (role change,
      remove): non-null opens MemberBatchFailureModal listing exactly
      what failed and why (API design — partial success is not an error). */
   const [batchFailures, setBatchFailures] = useState<
     { account: string; reason: string }[] | null
   >(null);
-  const BATCH_REASON: Record<string, string> = {
-    USER_NOT_FOUND: "사용자를 찾을 수 없습니다",
-    NOT_TEAM_MEMBER: "팀 멤버가 아닙니다",
-  };
-  // Any other code (e.g. a transient INTERNAL) shows a generic retry message
-  // instead of leaking the raw backend code into the failure modal.
-  const BATCH_REASON_FALLBACK = "처리에 실패했습니다. 다시 시도해 주세요.";
   const accountOf = (userId: string) =>
     members.find((m) => m.userId === userId)?.account ?? userId;
 
   const [addError, setAddError] = useState<string | null>(null);
-  const ADD_REASON: Record<string, string> = {
-    ALREADY_TEAM_MEMBER: "이미 초대된 사용자입니다.",
-    USER_NOT_FOUND: "등록되지 않은 계정입니다.",
-    CANNOT_INVITE_ADMIN: "콘솔 관리자 계정은 추가할 수 없습니다.",
-    MAIL_UPSTREAM_ERROR: "초대 코드 전송에 실패했습니다. 다시 시도해 주세요.",
-  };
 
   const roleChanges = [...pendingRoles.entries()].map(([userId, to]) => {
     const member = members.find((m) => m.userId === userId);
     return {
       account: member?.account ?? userId,
-      from: baseRole(userId, member?.role ?? "read"),
+      from: baseRole(userId, member?.role ?? TEAM_MEMBER_ROLE.read),
       to,
     };
   });
@@ -306,7 +295,11 @@ const TreeDetailView = ({
       {
         onSuccess: () => {
           closeModal();
-          showNotice("팀 생성", "팀이 생성되었습니다.", "success");
+          showNotice(
+            NOTICE_TEXT.createTeam.title,
+            NOTICE_TEXT.createTeam.success,
+            "success",
+          );
         },
         onError: async (res) => {
           const code = await parseErrorCode(res);
@@ -322,7 +315,11 @@ const TreeDetailView = ({
       {
         onSuccess: () => {
           closeModal();
-          showNotice("팀 이름 변경", "팀 이름이 변경되었습니다.", "success");
+          showNotice(
+            NOTICE_TEXT.renameTeam.title,
+            NOTICE_TEXT.renameTeam.success,
+            "success",
+          );
         },
         onError: async (res) => {
           const code = await parseErrorCode(res);
@@ -341,12 +338,18 @@ const TreeDetailView = ({
       {
         onSuccess: () => {
           closeModal();
-          showNotice("팀 삭제", "팀이 삭제되었습니다.", "success", () => {
-            onSelectTeam(
-              teams.find((t) => t.parentId === null && t.id !== selectedTeam.id)
-                ?.id ?? "",
-            );
-          });
+          showNotice(
+            NOTICE_TEXT.deleteTeam.title,
+            NOTICE_TEXT.deleteTeam.success,
+            "success",
+            () => {
+              onSelectTeam(
+                teams.find(
+                  (t) => t.parentId === null && t.id !== selectedTeam.id,
+                )?.id ?? "",
+              );
+            },
+          );
         },
         onError: async (res) => {
           const code = await parseErrorCode(res);
@@ -362,11 +365,15 @@ const TreeDetailView = ({
       {
         onSuccess: () => {
           closeModal();
-          showNotice("멤버 추가", "멤버를 추가했습니다.", "success");
+          showNotice(
+            NOTICE_TEXT.addTeamMember.title,
+            NOTICE_TEXT.addTeamMember.success,
+            "success",
+          );
         },
         onError: async (res) => {
           const code = await parseErrorCode(res);
-          setAddError(ADD_REASON[code] ?? "멤버 추가에 실패했습니다.");
+          setAddError(ADD_MEMBER_REASON[code] ?? "멤버 추가에 실패했습니다.");
         },
       },
     );
@@ -411,8 +418,8 @@ const TreeDetailView = ({
         onError: () => {
           closeModal();
           showNotice(
-            MODAL_TITLES.roleChange,
-            "권한 변경에 실패했습니다.",
+            NOTICE_TEXT.roleChange.title,
+            NOTICE_TEXT.roleChange.failure,
             "error",
           );
         },
@@ -434,8 +441,8 @@ const TreeDetailView = ({
           );
         } else {
           showNotice(
-            MODAL_TITLES.removeMembership,
-            "멤버십이 제거되었습니다.",
+            NOTICE_TEXT.removeMembership.title,
+            NOTICE_TEXT.removeMembership.success,
             "success",
           );
         }
@@ -443,8 +450,8 @@ const TreeDetailView = ({
       onError: () => {
         closeModal();
         showNotice(
-          MODAL_TITLES.removeMembership,
-          "멤버십 제거에 실패했습니다.",
+          NOTICE_TEXT.removeMembership.title,
+          NOTICE_TEXT.removeMembership.failure,
           "error",
         );
       },
@@ -553,7 +560,7 @@ const TreeDetailView = ({
           scrollClassName="min-h-[526px]"
           foot={
             <TableFoot
-              info={`총 ${total}명 · ${PAGE_SIZE}명/페이지`}
+              info={`총 ${total}명 · ${DEFAULT_PAGE_SIZE}명/페이지`}
               className="flex-row items-center"
             >
               <div className="flex flex-col items-end gap-3">

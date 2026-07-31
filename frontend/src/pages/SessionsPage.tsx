@@ -13,7 +13,7 @@ import TableRow from "@/components/table/TableRow";
 import { useInvitationHistoryQuery } from "@/hooks/queries/useInvitationHistoryQuery";
 import { cn } from "@/utils/cn";
 import { formatDateTime } from "@/utils/formatDate";
-import { BTN_TEXT } from "@/constants/commonConstants";
+import { BTN_TEXT, DEFAULT_PAGE_SIZE } from "@/constants/commonConstants";
 import type { TDropdownOption } from "@/types/commonTypes";
 
 const styles = {
@@ -31,9 +31,6 @@ const SORT_OPTIONS: TDropdownOption[] = [
   { value: "last_access", label: "최근 접속 시간" },
 ];
 
-/* 10 rows per page, fixed (SC-16 no.4) — the ?size=10 query param. */
-const PAGE_SIZE = 10;
-
 /**
  * SessionsPage is the session management screen (SC-16): the token
  * issuance/access history table (state A) with a 3-way sort and fixed
@@ -47,7 +44,11 @@ const SessionsPage = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const currentPage = Math.min(page, totalPages);
-  const historyQuery = useInvitationHistoryQuery(sort, currentPage, PAGE_SIZE);
+  const historyQuery = useInvitationHistoryQuery(
+    sort,
+    currentPage,
+    DEFAULT_PAGE_SIZE,
+  );
 
   const rows = historyQuery.data?.items ?? [];
   const total = historyQuery.data?.total ?? 0;
@@ -60,7 +61,7 @@ const SessionsPage = () => {
      change reduces the result count), so Pagination and later renders
      resume from a valid value instead of the stale, too-high one. */
   useEffect(() => {
-    const nextTotalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const nextTotalPages = Math.max(1, Math.ceil(total / DEFAULT_PAGE_SIZE));
     setTotalPages(nextTotalPages);
     if (page > nextTotalPages) setPage(nextTotalPages);
   }, [total, page]);
@@ -121,7 +122,7 @@ const SessionsPage = () => {
         }
         foot={
           <TableFoot
-            info={`총 ${total}건 · ${PAGE_SIZE}건/페이지`}
+            info={`총 ${total}건 · ${DEFAULT_PAGE_SIZE}건/페이지`}
             className="flex-row"
           >
             <Pagination

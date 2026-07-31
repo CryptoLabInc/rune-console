@@ -24,6 +24,7 @@ import TableHead from "@/components/table/TableHead";
 import TableHeaderCell from "@/components/table/TableHeaderCell";
 import TableRow from "@/components/table/TableRow";
 import TableToolbar from "@/components/table/TableToolbar";
+import { ROLE_OPTIONS } from "@/components/teams/teamOptions";
 import TeamTree from "@/components/tree/TeamTree";
 import TeamTreeFooter from "@/components/tree/TeamTreeFooter";
 import { cn } from "@/utils/cn";
@@ -54,12 +55,6 @@ const BTN_THEMES: { color: TBTNColor; role: string; text: string }[] = [
   { color: "mintOutline", role: "outline · primary", text: "새 팀 만들기" },
   { color: "grayOutline", role: "outline · secondary", text: "닫기" },
   { color: "redOutline", role: "outline · danger", text: "멤버 삭제" },
-];
-
-const ROLE_OPTIONS = [
-  { value: "edit", label: "edit" },
-  { value: "write", label: "write" },
-  { value: "read", label: "read" },
 ];
 
 const TEAM_OPTIONS = [
