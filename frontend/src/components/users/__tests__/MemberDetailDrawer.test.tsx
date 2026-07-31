@@ -105,6 +105,43 @@ describe("MemberDetailDrawer", () => {
     expect(dashes.length).toBeGreaterThanOrEqual(2);
   });
 
+  it("renders refetched memberships from props and keeps staged edits on top", async () => {
+    const user = userEvent.setup();
+    const props = baseProps();
+    const { rerender } = render(<MemberDetailDrawer {...props} />);
+
+    /* Stage a role pick before the fresher server payload lands. */
+    await user.click(screen.getByRole("button", { name: "백엔드 role" }));
+    await user.click(screen.getByRole("option", { name: "write" }));
+
+    /* The detail query (or a post-mutation refetch) resolves with an
+       extra membership — the drawer must render it without a remount. */
+    rerender(
+      <MemberDetailDrawer
+        {...props}
+        user={{
+          ...USER,
+          memberships: [
+            ...USER.memberships,
+            { teamId: "t_d", teamName: "디자인", role: "read" },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("소속 팀 (2)")).toBeInTheDocument();
+    expect(screen.getByText("디자인")).toBeInTheDocument();
+
+    /* The staged (unapplied) pick survives the refetch: the 백엔드 row
+       still shows write and the update button stays armed. */
+    expect(
+      screen.getByRole("button", { name: "백엔드 role" }),
+    ).toHaveTextContent("write");
+    expect(
+      screen.getByRole("button", { name: BTN_TEXT.updateChanges }),
+    ).toBeEnabled();
+  });
+
   it("stages a role change, confirms, and calls onUpdateRoles with {updates}", async () => {
     const user = userEvent.setup();
     const props = baseProps();

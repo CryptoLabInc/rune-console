@@ -68,7 +68,8 @@ const subtitleFor = (user: TUserListItem): string => {
   }
 };
 
-/** One staged membership row: baseRole is the saved value. */
+/** One membership row as rendered: server truth (baseRole) with the
+    staged edits (role pick, checkbox) applied on top. */
 type TMembershipDraft = {
   teamId: string;
   teamName: string;
@@ -132,15 +133,16 @@ const MemberDetailDrawer = ({
   onCancelInvitation,
   teams,
 }: MemberDetailDrawerProps) => {
-  const [memberships, setMemberships] = useState<TMembershipDraft[]>(() =>
-    user.memberships.map((m) => ({
-      teamId: m.teamId,
-      teamName: m.teamName,
-      baseRole: m.role,
-      role: m.role,
-      checked: false,
-    })),
+  /* Server truth (user.memberships) flows straight from props — the
+     drawer never copies it into state, so the fresher GET /users/{id}
+     payload and every post-mutation refetch render immediately. Only
+     the user's own edits are staged: role picks not yet applied and
+     the checkbox selection, re-applied as a diff on top of whatever
+     the server currently says. */
+  const [pendingRoles, setPendingRoles] = useState<Map<string, string>>(
+    new Map(),
   );
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [openModal, setOpenModal] = useState<TDrawerModal>(null);
   const [resending, setResending] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -153,6 +155,16 @@ const MemberDetailDrawer = ({
   const showNotice = useNoticeStore((state) => state.showNotice);
   const teamOptions = buildTeamOptions(teams);
 
+  const memberships: TMembershipDraft[] = user.memberships.map((m) => ({
+    teamId: m.teamId,
+    teamName: m.teamName,
+    baseRole: m.role,
+    role: pendingRoles.get(m.teamId) ?? m.role,
+    checked: checkedIds.has(m.teamId),
+  }));
+
+  /* A staged pick equal to the (possibly refetched) server role is a
+     no-op and drops out of `changes` on its own. */
   const changes = memberships.filter((m) => m.role !== m.baseRole);
   const selected = memberships.filter((m) => m.checked);
   const allChecked =
@@ -169,10 +181,15 @@ const MemberDetailDrawer = ({
     ),
   );
 
-  const patchMembership = (teamId: string, patch: Partial<TMembershipDraft>) =>
-    setMemberships((prev) =>
-      prev.map((m) => (m.teamId === teamId ? { ...m, ...patch } : m)),
-    );
+  const stageRole = (teamId: string, role: string) =>
+    setPendingRoles((prev) => new Map(prev).set(teamId, role));
+  const setChecked = (teamId: string, checked: boolean) =>
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(teamId);
+      else next.delete(teamId);
+      return next;
+    });
 
   const handleResend = async () => {
     setResending(true);
@@ -213,19 +230,9 @@ const MemberDetailDrawer = ({
   const handleAdd = async () => {
     setAdding(true);
     try {
+      /* The mutation invalidates the user detail/list queries — the new
+         row arrives with the refetch, so nothing is mirrored locally. */
       await onAddMembership(addTeamId, addRole);
-      const teamName =
-        teamOptions.find((o) => o.value === addTeamId)?.label ?? addTeamId;
-      setMemberships((prev) => [
-        ...prev,
-        {
-          teamId: addTeamId,
-          teamName,
-          baseRole: addRole,
-          role: addRole,
-          checked: false,
-        },
-      ]);
       showNotice(
         NOTICE_TEXT.addMembership.title,
         NOTICE_TEXT.addMembership.success,
@@ -317,8 +324,10 @@ const MemberDetailDrawer = ({
                 <Checkbox
                   checked={allChecked}
                   onChange={(checked) =>
-                    setMemberships((prev) =>
-                      prev.map((m) => ({ ...m, checked })),
+                    setCheckedIds(
+                      checked
+                        ? new Set(memberships.map((m) => m.teamId))
+                        : new Set(),
                     )
                   }
                   ariaLabel="전체선택"
@@ -345,10 +354,8 @@ const MemberDetailDrawer = ({
                     roleOptions={ROLE_OPTIONS}
                     checked={m.checked}
                     changed={m.role !== m.baseRole}
-                    onCheck={(checked) =>
-                      patchMembership(m.teamId, { checked })
-                    }
-                    onRoleChange={(role) => patchMembership(m.teamId, { role })}
+                    onCheck={(checked) => setChecked(m.teamId, checked)}
+                    onRoleChange={(role) => stageRole(m.teamId, role)}
                   />
                 ))
               )}
@@ -366,11 +373,7 @@ const MemberDetailDrawer = ({
               btnColor="grayOutline"
               className="w-fit"
               disabled={changes.length === 0}
-              handleClick={() =>
-                setMemberships((prev) =>
-                  prev.map((m) => ({ ...m, role: m.baseRole })),
-                )
-              }
+              handleClick={() => setPendingRoles(new Map())}
             />
             <Button
               btnText={BTN_TEXT.updateChanges}
@@ -484,13 +487,16 @@ const MemberDetailDrawer = ({
               changes.map((m) => ({ teamId: m.teamId, role: m.role })),
             );
             const failedIds = new Set(result.failed.map((f) => f.id));
-            setMemberships((prev) =>
-              prev.map((m) =>
-                changedIds.includes(m.teamId) && !failedIds.has(m.teamId)
-                  ? { ...m, baseRole: m.role }
-                  : m,
-              ),
-            );
+            /* Applied roles come back with the invalidation refetch —
+               drop their staged picks and keep only the failed ones
+               staged for a retry. */
+            setPendingRoles((prev) => {
+              const next = new Map(prev);
+              for (const teamId of changedIds) {
+                if (!failedIds.has(teamId)) next.delete(teamId);
+              }
+              return next;
+            });
             if (result.failed.length > 0) {
               setBatchFailures(
                 result.failed.map((f) => ({
@@ -519,12 +525,23 @@ const MemberDetailDrawer = ({
             const removedIds = selected.map((m) => m.teamId);
             const result = await onRemoveMemberships(removedIds);
             const failedIds = new Set(result.failed.map((f) => f.id));
-            setMemberships((prev) =>
-              prev.filter(
-                (m) =>
-                  !removedIds.includes(m.teamId) || failedIds.has(m.teamId),
-              ),
-            );
+            /* Removed rows drop out with the invalidation refetch —
+               clear their staged edits; failed rows keep their check
+               so the user can retry the removal. */
+            setCheckedIds((prev) => {
+              const next = new Set(prev);
+              for (const teamId of removedIds) {
+                if (!failedIds.has(teamId)) next.delete(teamId);
+              }
+              return next;
+            });
+            setPendingRoles((prev) => {
+              const next = new Map(prev);
+              for (const teamId of removedIds) {
+                if (!failedIds.has(teamId)) next.delete(teamId);
+              }
+              return next;
+            });
             if (result.failed.length === 0) {
               showNotice(
                 NOTICE_TEXT.removeMembership.title,
