@@ -1,3 +1,5 @@
+import type { WORKSPACE_STATUS } from "@/constants/apiConstants";
+
 /** Option shape for the shared Dropdown element (UIKIT AdminOption). */
 export type TDropdownOption = {
   value: string;
@@ -13,16 +15,11 @@ export type TMemberStatus = "online" | "offline";
 /**
  * rune workspace lifecycle phase (wireframe SC-03 badge; console API
  * `phase`). `provisioning` is the transient state right after create,
- * before the endpoint/row count exist.
+ * before the endpoint/row count exist. Derived from WORKSPACE_STATUS
+ * (single source).
  */
 export type TWorkspaceStatus =
-  | "provisioning"
-  | "running"
-  | "stopping"
-  | "stopped"
-  | "starting"
-  | "deleting"
-  | "error";
+  (typeof WORKSPACE_STATUS)[keyof typeof WORKSPACE_STATUS];
 
 /**
  * rune workspace record surfaced in the console (wireframe SC-02 state D),

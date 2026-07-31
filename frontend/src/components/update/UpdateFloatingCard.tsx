@@ -9,6 +9,7 @@ import {
   useUpdateQuery,
 } from "@/hooks/queries/useUpdateQuery";
 import { reloadPage } from "@/utils/reloadPage";
+import { SYSTEM_UPDATE_STATE } from "@/constants/apiConstants";
 import { BTN_TEXT } from "@/constants/commonConstants";
 
 const DISMISSED_KEY_PREFIX = "runeconsole.system-update.dismissed:";
@@ -88,7 +89,8 @@ const UpdateFloatingCard = () => {
     if (!status || !queuedTarget) return;
     const installed = status.currentVersion === queuedTarget;
     const sameJobSucceeded =
-      status.targetVersion === queuedTarget && status.state === "succeeded";
+      status.targetVersion === queuedTarget &&
+      status.state === SYSTEM_UPDATE_STATE.succeeded;
     if (!installed && !sameJobSucceeded) return;
 
     // Clear first: the next SPA must not enter a reload loop if the helper
@@ -103,7 +105,9 @@ const UpdateFloatingCard = () => {
   const targetVersion = status.targetVersion;
   const serverActive = isSystemUpdateActive(status.state);
   const busy = serverActive || updateMutation.isPending;
-  const failed = !busy && (status.state === "failed" || updateMutation.isError);
+  const failed =
+    !busy &&
+    (status.state === SYSTEM_UPDATE_STATE.failed || updateMutation.isError);
   const initiallyEligible = status.capable && status.updateAvailable;
 
   if (!busy && !initiallyEligible) return null;
@@ -157,7 +161,7 @@ const UpdateFloatingCard = () => {
         >
           <IconSpinner className="text-mint size-5 flex-none" />
           <span>
-            {status.state === "running"
+            {status.state === SYSTEM_UPDATE_STATE.running
               ? "백업 및 업데이트를 진행하고 있습니다…"
               : "업데이트를 준비하고 있습니다…"}
           </span>

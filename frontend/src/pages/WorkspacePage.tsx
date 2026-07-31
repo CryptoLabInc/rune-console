@@ -8,6 +8,7 @@ import {
   isTransitionalStatus,
   useWorkspaceQuery,
 } from "@/hooks/queries/useWorkspaceQuery";
+import { WORKSPACE_STATUS } from "@/constants/apiConstants";
 import { PATH_LIST } from "@/constants/commonConstants";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 
@@ -41,7 +42,7 @@ const WorkspacePage = () => {
   const [createdHere, setCreatedHere] = useState(false);
 
   useEffect(() => {
-    if (workspace?.status === "running" && createdHere) {
+    if (workspace?.status === WORKSPACE_STATUS.running && createdHere) {
       setCreatedHere(false);
       openModal();
     }

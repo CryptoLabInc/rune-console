@@ -1,3 +1,4 @@
+import { TEAM_MEMBER_ROLE } from "@/constants/apiConstants";
 import type { TDropdownOption } from "@/types/commonTypes";
 import type { TTeamTree } from "@/types/teamTypes";
 
@@ -9,9 +10,9 @@ export const TEAM_NAME_RULE_TEXT =
 
 /** Grantable member roles (Admin is console-account only — API §0). */
 export const ROLE_OPTIONS: TDropdownOption[] = [
-  { value: "edit", label: "edit" },
-  { value: "write", label: "write" },
-  { value: "read", label: "read" },
+  { value: TEAM_MEMBER_ROLE.edit, label: TEAM_MEMBER_ROLE.edit },
+  { value: TEAM_MEMBER_ROLE.write, label: TEAM_MEMBER_ROLE.write },
+  { value: TEAM_MEMBER_ROLE.read, label: TEAM_MEMBER_ROLE.read },
 ];
 
 /** All teams in tree order with depth indent (for team-picker dropdowns).
