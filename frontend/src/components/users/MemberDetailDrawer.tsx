@@ -21,6 +21,11 @@ import MembershipRemoveModal from "@/components/users/MembershipRemoveModal";
 import { CHIP_STATUS } from "@/components/users/memberStatusMap";
 import RoleChangeConfirmModal from "@/components/users/RoleChangeConfirmModal";
 import SessionDeactivateModal from "@/components/users/SessionDeactivateModal";
+import {
+  toBatchFailureRows,
+  useBatchFailureModal,
+} from "@/hooks/useBatchFailureModal";
+import { usePageScopedSelection } from "@/hooks/usePageScopedSelection";
 import { parseErrorCode } from "@/api/parseError";
 import { formatDate, formatDateTime } from "@/utils/formatDate";
 import {
@@ -34,10 +39,7 @@ import {
   PLACEHOLDERS,
   TABLE_HEADERS,
 } from "@/constants/commonConstants";
-import {
-  BATCH_REASON,
-  BATCH_REASON_FALLBACK,
-} from "@/constants/errorConstants";
+import { BATCH_REASON_FALLBACK } from "@/constants/errorConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import { INVITATION_STATUS_VAR } from "@/constants/styleConstants";
 import type { TBatchResult, TTeamTree } from "@/types/teamTypes";
@@ -147,17 +149,25 @@ const MemberDetailDrawer = ({
   const [pendingRoles, setPendingRoles] = useState<Map<string, string>>(
     new Map(),
   );
-  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const {
+    selectedIds: checkedIds,
+    toggleOne: setChecked,
+    toggleAll: setAllChecked,
+    setSelectedIds: setCheckedIds,
+  } = usePageScopedSelection();
   const [openModal, setOpenModal] = useState<TDrawerModal>(null);
   const [resending, setResending] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addTeamId, setAddTeamId] = useState("");
   const [addRole, setAddRole] = useState("");
   const [adding, setAdding] = useState(false);
-  const [batchFailures, setBatchFailures] = useState<
-    { account: string; reason: string }[] | null
-  >(null);
+  const { batchFailures, showBatchFailures, closeBatchFailures } =
+    useBatchFailureModal();
   const showNotice = useNoticeStore((state) => state.showNotice);
+  /* Failure rows are labeled by team name — the drawer's batch targets
+     are this one user's memberships. */
+  const teamNameOf = (teamId: string) =>
+    memberships.find((m) => m.teamId === teamId)?.teamName ?? teamId;
   const teamOptions = buildTeamOptions(teams);
 
   const memberships: TMembershipDraft[] = user.memberships.map((m) => ({
@@ -188,13 +198,6 @@ const MemberDetailDrawer = ({
 
   const stageRole = (teamId: string, role: string) =>
     setPendingRoles((prev) => new Map(prev).set(teamId, role));
-  const setChecked = (teamId: string, checked: boolean) =>
-    setCheckedIds((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(teamId);
-      else next.delete(teamId);
-      return next;
-    });
 
   const handleResend = async () => {
     setResending(true);
@@ -329,10 +332,9 @@ const MemberDetailDrawer = ({
                 <Checkbox
                   checked={allChecked}
                   onChange={(checked) =>
-                    setCheckedIds(
-                      checked
-                        ? new Set(memberships.map((m) => m.teamId))
-                        : new Set(),
+                    setAllChecked(
+                      memberships.map((m) => m.teamId),
+                      checked,
                     )
                   }
                   ariaLabel={ARIA_LABELS.selectAll}
@@ -507,13 +509,12 @@ const MemberDetailDrawer = ({
               return next;
             });
             if (result.failed.length > 0) {
-              setBatchFailures(
-                result.failed.map((f) => ({
-                  account:
-                    memberships.find((m) => m.teamId === f.id)?.teamName ??
-                    f.id,
-                  reason: BATCH_REASON[f.code] ?? BATCH_REASON_FALLBACK,
-                })),
+              showBatchFailures(
+                toBatchFailureRows(
+                  result.failed,
+                  teamNameOf,
+                  () => BATCH_REASON_FALLBACK,
+                ),
               );
             }
           }}
@@ -558,13 +559,12 @@ const MemberDetailDrawer = ({
                 "success",
               );
             } else {
-              setBatchFailures(
-                result.failed.map((f) => ({
-                  account:
-                    memberships.find((m) => m.teamId === f.id)?.teamName ??
-                    f.id,
-                  reason: BATCH_REASON[f.code] ?? BATCH_REASON_FALLBACK,
-                })),
+              showBatchFailures(
+                toBatchFailureRows(
+                  result.failed,
+                  teamNameOf,
+                  () => BATCH_REASON_FALLBACK,
+                ),
               );
             }
           }}
@@ -649,7 +649,7 @@ const MemberDetailDrawer = ({
       {batchFailures && (
         <MemberBatchFailureModal
           failures={batchFailures}
-          onClose={() => setBatchFailures(null)}
+          onClose={closeBatchFailures}
         />
       )}
     </>
