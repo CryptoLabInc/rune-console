@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import Button from "@/components/elements/Button";
 import Checkbox from "@/components/elements/Checkbox";
@@ -34,7 +34,16 @@ import {
 import { useTeamsTreeQuery } from "@/hooks/queries/useTeamsTreeQuery";
 import { useUserQuery } from "@/hooks/queries/useUserQuery";
 import { useUsersQuery } from "@/hooks/queries/useUsersQuery";
+import {
+  toBatchFailureRows,
+  useBatchFailureModal,
+} from "@/hooks/useBatchFailureModal";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { usePageScopedSelection } from "@/hooks/usePageScopedSelection";
+import {
+  useServerPagination,
+  useSyncPaginationTotal,
+} from "@/hooks/useServerPagination";
 import { parseErrorCode } from "@/api/parseError";
 import { ERROR_CODES, SESSION_STATUS } from "@/constants/apiConstants";
 import {
@@ -45,7 +54,6 @@ import {
   PAGE_TITLES,
   TABLE_HEADERS,
 } from "@/constants/commonConstants";
-import { BATCH_REASON } from "@/constants/errorConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import type { TDropdownOption } from "@/types/commonTypes";
 import type { TTeamMemberRole, TTeamTree } from "@/types/teamTypes";
@@ -112,14 +120,15 @@ const UsersPage = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
   const [sort, setSort] = useState("last_invited");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [page, setPage] = useState(1);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [drawerUserId, setDrawerUserId] = useState<string | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
-  const [batchFailures, setBatchFailures] = useState<
-    { account: string; reason: string }[] | null
-  >(null);
+  const { selectedIds, toggleOne, toggleAll, clearSelection, setSelectedIds } =
+    usePageScopedSelection();
+  const { page, totalPages, setPage, resetPage, syncTotal } =
+    useServerPagination();
+  const { batchFailures, showBatchFailures, closeBatchFailures } =
+    useBatchFailureModal();
   const showNotice = useNoticeStore((state) => state.showNotice);
 
   const { data: teams } = useTeamsTreeQuery();
@@ -145,13 +154,7 @@ const UsersPage = () => {
   });
   const users = usersQuery.data?.items ?? [];
   const total = usersQuery.data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / DEFAULT_PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-
-  /* keep the requested page within range so the query never asks for an out-of-range page */
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
+  useSyncPaginationTotal(syncTotal, total);
 
   /* A search/filter is active whenever it would narrow the server-side
      result — distinguishes "no members at all" (state B) from "no
@@ -171,37 +174,20 @@ const UsersPage = () => {
     <T,>(setter: (value: T) => void) =>
     (value: T) => {
       setter(value);
-      setPage(1);
-      setSelectedIds(new Set());
+      resetPage();
+      clearSelection();
     };
   /* Moving to another page clears the selection too — checks are
      page-scoped, and a checked row on the old page shouldn't ride along
      into a bulk action taken on a different page. */
   const goToPage = (next: number) => {
     setPage(next);
-    setSelectedIds(new Set());
+    clearSelection();
   };
 
   /* Select-all is page-scoped. */
   const allSelected =
     users.length > 0 && users.every((u) => selectedIds.has(u.userId));
-
-  const toggleAll = (checked: boolean) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      users.forEach((u) =>
-        checked ? next.add(u.userId) : next.delete(u.userId),
-      );
-      return next;
-    });
-
-  const toggleOne = (userId: string, checked: boolean) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(userId);
-      else next.delete(userId);
-      return next;
-    });
 
   /** POST /invitations — server judges duplicates and target states; only
       the staged team/role sets are sent (buildInvitePreview's sub-team
@@ -245,7 +231,7 @@ const UsersPage = () => {
       );
       return;
     }
-    setBatchFailures(
+    showBatchFailures(
       failed.map((u) => ({
         account: u.account,
         reason: NOTICE_TEXT.resendInvitation.failedReason,
@@ -286,11 +272,12 @@ const UsersPage = () => {
     if (succeededIds.length === 0) {
       throw new Error("delete failed for every target");
     }
-    setBatchFailures(
-      result.failed.map((f) => ({
-        account: targets.find((u) => u.userId === f.id)?.account ?? f.id,
-        reason: BATCH_REASON[f.code] ?? f.code,
-      })),
+    showBatchFailures(
+      toBatchFailureRows(
+        result.failed,
+        (id) => targets.find((u) => u.userId === id)?.account ?? id,
+        (code) => code,
+      ),
     );
   };
 
@@ -438,7 +425,7 @@ const UsersPage = () => {
             className="flex-row"
           >
             <Pagination
-              page={currentPage}
+              page={page}
               totalPages={totalPages}
               onChange={goToPage}
             />
@@ -449,7 +436,12 @@ const UsersPage = () => {
           <TableHeaderCell className="w-8 pr-1">
             <Checkbox
               checked={allSelected}
-              onChange={toggleAll}
+              onChange={(checked) =>
+                toggleAll(
+                  users.map((u) => u.userId),
+                  checked,
+                )
+              }
               ariaLabel={ARIA_LABELS.selectAll}
             />
           </TableHeaderCell>
@@ -590,7 +582,7 @@ const UsersPage = () => {
       {batchFailures && (
         <MemberBatchFailureModal
           failures={batchFailures}
-          onClose={() => setBatchFailures(null)}
+          onClose={closeBatchFailures}
         />
       )}
     </section>

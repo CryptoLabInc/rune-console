@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import Button from "@/components/elements/Button";
 import Dropdown from "@/components/elements/Dropdown";
@@ -11,6 +11,10 @@ import TableHead from "@/components/table/TableHead";
 import TableHeaderCell from "@/components/table/TableHeaderCell";
 import TableRow from "@/components/table/TableRow";
 import { useInvitationHistoryQuery } from "@/hooks/queries/useInvitationHistoryQuery";
+import {
+  useServerPagination,
+  useSyncPaginationTotal,
+} from "@/hooks/useServerPagination";
 import { cn } from "@/utils/cn";
 import { formatDateTime } from "@/utils/formatDate";
 import {
@@ -48,35 +52,18 @@ const SORT_OPTIONS: TDropdownOption[] = [
  */
 const SessionsPage = () => {
   const [sort, setSort] = useState("last_access");
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const currentPage = Math.min(page, totalPages);
-  const historyQuery = useInvitationHistoryQuery(
-    sort,
-    currentPage,
-    DEFAULT_PAGE_SIZE,
-  );
+  const { page, totalPages, setPage, resetPage, syncTotal } =
+    useServerPagination();
+  const historyQuery = useInvitationHistoryQuery(sort, page, DEFAULT_PAGE_SIZE);
 
   const rows = historyQuery.data?.items ?? [];
   const total = historyQuery.data?.total ?? 0;
-
-  /* totalPages tracks the last response's total (a page/sort transition
-     keeps the previous value via keepPreviousData until the new page
-     resolves); currentPage clamps against it before the query call
-     above, so the request itself is always in range. This effect only
-     corrects the stored `page` once totalPages shrinks (e.g. a sort
-     change reduces the result count), so Pagination and later renders
-     resume from a valid value instead of the stale, too-high one. */
-  useEffect(() => {
-    const nextTotalPages = Math.max(1, Math.ceil(total / DEFAULT_PAGE_SIZE));
-    setTotalPages(nextTotalPages);
-    if (page > nextTotalPages) setPage(nextTotalPages);
-  }, [total, page]);
+  useSyncPaginationTotal(syncTotal, total);
 
   /* Sort change resets to page 1 (SC-16 no.4). */
   const changeSort = (value: string) => {
     setSort(value);
-    setPage(1);
+    resetPage();
   };
 
   /* ── SC-16 state B — 조회 실패 ──────────────────────────────────── */
@@ -133,7 +120,7 @@ const SessionsPage = () => {
             className="flex-row"
           >
             <Pagination
-              page={currentPage}
+              page={page}
               totalPages={totalPages}
               onChange={setPage}
             />

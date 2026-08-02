@@ -34,6 +34,15 @@ import {
 } from "@/hooks/mutations/useTeamMutations";
 import { useTeamMembersQuery } from "@/hooks/queries/useTeamMembersQuery";
 import { useTeamQuery } from "@/hooks/queries/useTeamQuery";
+import {
+  toBatchFailureRows,
+  useBatchFailureModal,
+} from "@/hooks/useBatchFailureModal";
+import { usePageScopedSelection } from "@/hooks/usePageScopedSelection";
+import {
+  useServerPagination,
+  useSyncPaginationTotal,
+} from "@/hooks/useServerPagination";
 import { parseErrorCode } from "@/api/parseError";
 import { formatDate } from "@/utils/formatDate";
 import { TEAM_MEMBER_ROLE } from "@/constants/apiConstants";
@@ -45,7 +54,6 @@ import {
 } from "@/constants/commonConstants";
 import {
   ADD_MEMBER_REASON,
-  BATCH_REASON,
   BATCH_REASON_FALLBACK,
   TEAM_REASON,
 } from "@/constants/errorConstants";
@@ -161,8 +169,10 @@ const TreeDetailView = ({
   const defaultTeam = teamNodes[0];
 
   const selectedTeam = findTeamNode(teamNodes, selectedTeamId) ?? defaultTeam;
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [page, setPage] = useState(1);
+  const { selectedIds, toggleOne, toggleAll, clearSelection } =
+    usePageScopedSelection();
+  const { page, totalPages, setPage, resetPage, syncTotal } =
+    useServerPagination();
 
   /* Role edits are staged (SC-06): dropdown picks collect here and only
      apply on [변경사항 업데이트]. savedRoles is the committed baseline
@@ -185,8 +195,8 @@ const TreeDetailView = ({
      target (e.g. when the prop doesn't resolve and falls back to
      defaultTeam). */
   useEffect(() => {
-    setPage(1);
-    setSelectedIds(new Set());
+    resetPage();
+    clearSelection();
     setPendingRoles(new Map());
     setSavedRoles(new Map());
   }, [selectedTeam.id]);
@@ -199,7 +209,7 @@ const TreeDetailView = ({
   );
   const members = membersQuery.data?.items ?? [];
   const total = membersQuery.data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / DEFAULT_PAGE_SIZE));
+  useSyncPaginationTotal(syncTotal, total);
 
   const addMember = useAddTeamMemberMutation(selectedTeam.id);
   const bulkRole = useBulkRoleChangeMutation(selectedTeam.id);
@@ -221,23 +231,6 @@ const TreeDetailView = ({
   /* Select-all is page-scoped; selections persist across page moves. */
   const allSelected =
     members.length > 0 && members.every((m) => selectedIds.has(m.userId));
-
-  const toggleAll = (checked: boolean) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      members.forEach((m) =>
-        checked ? next.add(m.userId) : next.delete(m.userId),
-      );
-      return next;
-    });
-
-  const toggleOne = (userId: string, checked: boolean) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(userId);
-      else next.delete(userId);
-      return next;
-    });
 
   const showNotice = useNoticeStore((state) => state.showNotice);
 
@@ -283,12 +276,8 @@ const TreeDetailView = ({
     setTeamError(null);
     closeModal();
   };
-  /* Partial-failure surface for the two batch endpoints (role change,
-     remove): non-null opens MemberBatchFailureModal listing exactly
-     what failed and why (API design — partial success is not an error). */
-  const [batchFailures, setBatchFailures] = useState<
-    { account: string; reason: string }[] | null
-  >(null);
+  const { batchFailures, showBatchFailures, closeBatchFailures } =
+    useBatchFailureModal();
   const accountOf = (userId: string) =>
     members.find((m) => m.userId === userId)?.account ?? userId;
 
@@ -420,11 +409,12 @@ const TreeDetailView = ({
               (prev) =>
                 new Map([...prev].filter(([userId]) => failedIds.has(userId))),
             );
-            setBatchFailures(
-              result.failed.map((f) => ({
-                account: accountOf(f.id),
-                reason: BATCH_REASON[f.code] ?? BATCH_REASON_FALLBACK,
-              })),
+            showBatchFailures(
+              toBatchFailureRows(
+                result.failed,
+                accountOf,
+                () => BATCH_REASON_FALLBACK,
+              ),
             );
           } else {
             applyRoleChanges();
@@ -446,13 +436,10 @@ const TreeDetailView = ({
     removeMembers.mutate(ids, {
       onSuccess: (result) => {
         closeModal();
-        setSelectedIds(new Set());
+        clearSelection();
         if (result.failed.length > 0) {
-          setBatchFailures(
-            result.failed.map((f) => ({
-              account: accountOf(f.id),
-              reason: BATCH_REASON[f.code] ?? f.code,
-            })),
+          showBatchFailures(
+            toBatchFailureRows(result.failed, accountOf, (code) => code),
           );
         } else {
           showNotice(
@@ -592,7 +579,12 @@ const TreeDetailView = ({
             <TableHeaderCell className="w-8 pr-1">
               <Checkbox
                 checked={allSelected}
-                onChange={toggleAll}
+                onChange={(checked) =>
+                  toggleAll(
+                    members.map((m) => m.userId),
+                    checked,
+                  )
+                }
                 ariaLabel={ARIA_LABELS.selectAll}
               />
             </TableHeaderCell>
@@ -740,7 +732,7 @@ const TreeDetailView = ({
       {batchFailures && (
         <MemberBatchFailureModal
           failures={batchFailures}
-          onClose={() => setBatchFailures(null)}
+          onClose={closeBatchFailures}
         />
       )}
     </div>
