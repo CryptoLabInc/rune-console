@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import WorkspaceModal from "@/components/workspace/WorkspaceModal";
 import { BTN_TEXT, PATH_LIST } from "@/constants/commonConstants";
-import type { TWorkspaceStatus, TWorkspace } from "@/types/commonTypes";
+import type { TWorkspace, TWorkspaceStatus } from "@/types/commonTypes";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 /* The modal's data + mutations are mocked so each render variant (detail,
@@ -141,7 +141,9 @@ describe("WorkspaceModal", () => {
     queryState = { data: { ...RUNNING, orphaned: true }, isError: false };
     render(<WorkspaceModal />);
     expect(
-      screen.getByText(/콘솔이 재설치되어 이 워크스페이스와 연결할 수 없습니다/),
+      screen.getByText(
+        /콘솔이 재설치되어 이 워크스페이스와 연결할 수 없습니다/,
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: BTN_TEXT.recreate }),
@@ -197,7 +199,9 @@ describe("WorkspaceModal", () => {
     recreateState = { isPending: false, isError: true };
     render(<WorkspaceModal />);
     expect(
-      screen.getByText("워크스페이스 재생성에 실패했습니다. 다시 시도해 주세요."),
+      screen.getByText(
+        "워크스페이스 재생성에 실패했습니다. 다시 시도해 주세요.",
+      ),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: BTN_TEXT.recreate }),

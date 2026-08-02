@@ -70,8 +70,6 @@ describe("WorkspacePage", () => {
     expect(
       screen.getByText(/워크스페이스를 생성하는 중입니다/),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByText("생성된 워크스페이스가 없습니다."),
-    ).toBeNull();
+    expect(screen.queryByText("생성된 워크스페이스가 없습니다.")).toBeNull();
   });
 });

@@ -16,13 +16,14 @@ import {
   isTransitionalStatus,
   useWorkspaceQuery,
 } from "@/hooks/queries/useWorkspaceQuery";
+import { WORKSPACE_STATUS } from "@/constants/apiConstants";
 import {
   BTN_TEXT,
   MODAL_TITLES,
   PATH_LIST,
   WORKSPACE_MAX_MEMORIES,
 } from "@/constants/commonConstants";
-import { WORKSPACE_STATUS } from "@/constants/apiConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 const FAIL_COPY = {
@@ -113,12 +114,12 @@ const WorkspaceModal = () => {
     }
     return (
       <ModalLayout title={MODAL_TITLES.workspaceDelete} isOpen>
-        <p className="text-center text-base">
+        <p className={MODAL_STYLE_VAR.message}>
           워크스페이스를 삭제하시겠습니까?
           <br />
           삭제 후에는 되돌릴 수 없습니다.
         </p>
-        <div className="flex w-full gap-2">
+        <div className={MODAL_STYLE_VAR.footerCompact}>
           <Button
             btnText={BTN_TEXT.close}
             btnSize="md"
@@ -156,13 +157,13 @@ const WorkspaceModal = () => {
     return (
       <ModalLayout title={MODAL_TITLES.workspaceOrphaned} isOpen>
         {tearingDown ? (
-          <p className="text-center text-base">
+          <p className={MODAL_STYLE_VAR.message}>
             기존 워크스페이스를 삭제하는 중입니다…
             <br />
             삭제가 완료되면 워크스페이스 생성을 시작합니다.
           </p>
         ) : (
-          <p className="text-center text-base">
+          <p className={MODAL_STYLE_VAR.message}>
             콘솔이 재설치되어 이 워크스페이스와 연결할 수 없습니다.
             <br />
             기존에 저장된 데이터는 이전 보안 키로 암호화되어 복구할 수 없습니다.
@@ -170,7 +171,7 @@ const WorkspaceModal = () => {
             삭제 후 재생성하면 빈 워크스페이스로 다시 시작합니다.
           </p>
         )}
-        <div className="flex w-full gap-2">
+        <div className={MODAL_STYLE_VAR.footerCompact}>
           <Button
             btnText={BTN_TEXT.close}
             btnSize="md"
@@ -205,15 +206,17 @@ const WorkspaceModal = () => {
   if (workspace?.reconnectRequired) {
     return (
       <ModalLayout title={MODAL_TITLES.workspaceReconnect} isOpen>
-        <p className="text-center text-base">
+        <p className={MODAL_STYLE_VAR.message}>
           워크스페이스 연결이 만료되었습니다.
           <br />
           재연결하여 데이터 플레인을 다시 활성화해 주세요.
         </p>
         {reconnectMutation.isError && (
-          <Notice tone="error">재연결에 실패했습니다. 다시 시도해 주세요.</Notice>
+          <Notice tone="error">
+            재연결에 실패했습니다. 다시 시도해 주세요.
+          </Notice>
         )}
-        <div className="flex w-full gap-2">
+        <div className={MODAL_STYLE_VAR.footerCompact}>
           <Button
             btnText={BTN_TEXT.close}
             btnSize="md"
@@ -239,7 +242,7 @@ const WorkspaceModal = () => {
   if (isError && !workspace) {
     return (
       <ModalLayout title={MODAL_TITLES.workspaceManage} isOpen>
-        <p className="text-center text-base">
+        <p className={MODAL_STYLE_VAR.message}>
           워크스페이스 정보를 불러올 수 없습니다.
           <br />
           잠시 후 다시 시도해 주세요.
@@ -257,7 +260,7 @@ const WorkspaceModal = () => {
 
   return (
     <ModalLayout title={MODAL_TITLES.workspaceManage} isOpen>
-      <div className="flex w-full flex-col gap-4">
+      <div className={MODAL_STYLE_VAR.body}>
         {/* Lifecycle actions sit at the content's top-right as quiet
             TextButtons — the info fields carry the primary reading weight. */}
         <div className="flex justify-end gap-2">

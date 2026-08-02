@@ -3,6 +3,7 @@ import { useState } from "react";
 import Button from "@/components/elements/Button";
 import ModalLayout from "@/components/layout/ModalLayout";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 
 interface CancelInvitationModalProps {
   account: string;
@@ -37,11 +38,11 @@ const CancelInvitationModal = ({
 
   return (
     <ModalLayout title={MODAL_TITLES.cancelInvitation} isOpen>
-      <p className="text-center text-base">
+      <p className={MODAL_STYLE_VAR.message}>
         {account}의 미사용 초대 코드가 모두 만료됩니다. <br />
         유저는 삭제되지 않습니다.
       </p>
-      <div className="flex w-full items-center gap-4">
+      <div className={MODAL_STYLE_VAR.footer}>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"

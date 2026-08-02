@@ -6,9 +6,11 @@ import Feedback from "@/components/elements/Feedback";
 import Pagination from "@/components/elements/Pagination";
 import Table from "@/components/table/Table";
 import TableCell from "@/components/table/TableCell";
+import TableEmptyRow from "@/components/table/TableEmptyRow";
 import TableFoot from "@/components/table/TableFoot";
 import TableHead from "@/components/table/TableHead";
 import TableHeaderCell from "@/components/table/TableHeaderCell";
+import TableLoadingRow from "@/components/table/TableLoadingRow";
 import TableRow from "@/components/table/TableRow";
 import { useInvitationHistoryQuery } from "@/hooks/queries/useInvitationHistoryQuery";
 import {
@@ -141,25 +143,9 @@ const SessionsPage = () => {
           </TableHeaderCell>
         </TableHead>
         <tbody>
-          {historyQuery.isPending && (
-            <tr>
-              <td
-                colSpan={3}
-                className="text-faint px-3 py-8 text-center text-sm"
-              >
-                불러오는 중…
-              </td>
-            </tr>
-          )}
+          {historyQuery.isPending && <TableLoadingRow colSpan={3} />}
           {!historyQuery.isPending && total === 0 && (
-            <tr>
-              <td
-                colSpan={3}
-                className="text-muted-foreground border-t px-3 py-8 text-center text-sm"
-              >
-                이력이 없습니다.
-              </td>
-            </tr>
+            <TableEmptyRow colSpan={3}>이력이 없습니다.</TableEmptyRow>
           )}
           {rows.map((row) => (
             /* Reissues are separate rows (D11) — username alone is not

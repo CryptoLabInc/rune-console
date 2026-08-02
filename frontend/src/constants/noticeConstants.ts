@@ -22,15 +22,12 @@ export const NOTICE_TEXT = {
     alreadyMember: "이미 소속된 팀입니다.",
     failure: "팀 추가에 실패했습니다. 다시 시도해 주세요.",
   },
+  /* Role-change and remove-failure results render INSIDE
+     RoleChangeConfirmModal/MembershipRemoveModal (SC-06 E-1/E-2) — only
+     the full-success removal toast goes through showNotice. */
   removeMembership: {
     title: MODAL_TITLES.removeMembership,
     success: "멤버십이 제거되었습니다.",
-    failure: "멤버십 제거에 실패했습니다.",
-  },
-  roleChange: {
-    title: MODAL_TITLES.roleChange,
-    success: "변경사항이 저장되었습니다.",
-    failure: "권한 변경에 실패했습니다.",
   },
   deactivateSession: {
     title: MODAL_TITLES.deactivateSession,

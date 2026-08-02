@@ -5,9 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import AddMemberModal from "@/components/teams/AddMemberModal";
 import CreateTeamModal from "@/components/teams/CreateTeamModal";
 import DeleteTeamModal from "@/components/teams/DeleteTeamModal";
-import RemoveMembershipModal from "@/components/teams/RemoveMembershipModal";
 import RenameTeamModal from "@/components/teams/RenameTeamModal";
-import RoleChangeConfirmModal from "@/components/teams/RoleChangeConfirmModal";
+import MembershipRemoveModal from "@/components/users/MembershipRemoveModal";
+import RoleChangeConfirmModal from "@/components/users/RoleChangeConfirmModal";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 
@@ -330,20 +330,28 @@ describe("AddMemberModal", () => {
   });
 });
 
-describe("RemoveMembershipModal", () => {
-  it("lists removals, always shows the sub-team notice, confirms", async () => {
+describe("MembershipRemoveModal (SC-06 entry)", () => {
+  it("lists removals with the sub-team notice and confirms", async () => {
     const user = userEvent.setup();
-    const onConfirm = vi.fn();
+    const onConfirm = vi.fn().mockResolvedValue(undefined);
     render(
-      <RemoveMembershipModal
-        teamName="백엔드"
-        members={[{ account: "k@corp.com", role: "edit" }]}
+      <MembershipRemoveModal
+        targets={[
+          {
+            account: "k@corp.com",
+            teamId: "t_b",
+            teamName: "백엔드",
+            role: "edit",
+          },
+        ]}
+        subteamNotice
         onClose={() => {}}
         onConfirm={onConfirm}
       />,
     );
     expect(screen.getByText(MODAL_TITLES.removeMembership)).toBeInTheDocument();
     expect(screen.getByText("k@corp.com")).toBeInTheDocument();
+    expect(screen.getByText("백엔드")).toBeInTheDocument();
     expect(screen.getByText(/하위 팀 소속은 유지됩니다/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: BTN_TEXT.remove }));
@@ -351,13 +359,14 @@ describe("RemoveMembershipModal", () => {
   });
 });
 
-describe("RoleChangeConfirmModal", () => {
-  it("lists staged changes and confirms", async () => {
+describe("RoleChangeConfirmModal (SC-06 entry)", () => {
+  it("lists staged changes and shows the in-modal result after 변경하기", async () => {
     const user = userEvent.setup();
-    const onConfirm = vi.fn();
+    const onConfirm = vi.fn().mockResolvedValue(undefined);
     render(
       <RoleChangeConfirmModal
-        changes={[{ account: "k@corp.com", from: "edit", to: "write" }]}
+        subjectLabel="account"
+        changes={[{ label: "k@corp.com", from: "edit", to: "write" }]}
         onClose={() => {}}
         onConfirm={onConfirm}
       />,
@@ -367,5 +376,12 @@ describe("RoleChangeConfirmModal", () => {
 
     await user.click(screen.getByRole("button", { name: BTN_TEXT.change }));
     expect(onConfirm).toHaveBeenCalled();
+    /* E-1: the result renders inside the modal; [닫기] alone remains. */
+    expect(
+      await screen.findByText("권한이 변경되었습니다."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: BTN_TEXT.change }),
+    ).not.toBeInTheDocument();
   });
 });
