@@ -3,7 +3,11 @@ import { useState } from "react";
 import Button from "@/components/elements/Button";
 import ModalLayout from "@/components/layout/ModalLayout";
 import ModalTable from "@/components/users/ModalTable";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
+import {
+  BTN_TEXT,
+  MODAL_TITLES,
+  TABLE_HEADERS,
+} from "@/constants/commonConstants";
 import type { TMemberDeleteTarget } from "@/types/userTypes";
 
 const DELETE_FAILED_MESSAGE = "멤버 삭제에 실패했습니다. 다시 시도해 주세요.";
@@ -15,7 +19,7 @@ const memberTeams = (memberships: TMemberDeleteTarget["memberships"]) =>
     /* table-fixed: the 팀/권한 columns split 50/50 regardless of content,
        so the per-user tables all line up. */
     <ModalTable
-      head={["팀", "권한"]}
+      head={[TABLE_HEADERS.team, TABLE_HEADERS.role]}
       rows={memberships.map((m) => [m.teamName, m.role])}
       className="table-fixed"
     />

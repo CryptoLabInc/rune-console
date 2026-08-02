@@ -7,15 +7,19 @@ import MemberStatus from "@/components/elements/MemberStatus";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
 import { ROLE_OPTIONS } from "@/components/teams/teamOptions";
+import { EMAIL_FORMAT_ERROR, EMAIL_PATTERN } from "@/utils/email";
 import {
   isSubmittableUsername,
   normalizeUsernameInput,
   USERNAME_MAX_LENGTH,
   validateUsername,
 } from "@/utils/username";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import {
+  BTN_TEXT,
+  INPUT_LABELS,
+  MODAL_TITLES,
+  PLACEHOLDERS,
+} from "@/constants/commonConstants";
 
 interface AddMemberModalProps {
   teamName: string;
@@ -56,18 +60,18 @@ const AddMemberModal = ({
       <div className="flex w-full flex-col gap-6">
         <Input
           id="add-member-account"
-          labelText="이메일 (account)"
+          labelText={INPUT_LABELS.emailAccount}
           type="email"
-          placeholder="user@corp.com"
+          placeholder={PLACEHOLDERS.emailExample}
           maxLength={100}
           value={account}
           setValue={setAccount}
-          error={invalidFormat ? "올바른 이메일 형식이 아닙니다." : undefined}
+          error={invalidFormat ? EMAIL_FORMAT_ERROR : undefined}
         />
         <Input
           id="add-member-username"
-          labelText="사용자 이름 (username)"
-          placeholder="사용자 이름"
+          labelText={INPUT_LABELS.username}
+          placeholder={PLACEHOLDERS.username}
           maxLength={USERNAME_MAX_LENGTH}
           value={username}
           setValue={(value) => setUsername(normalizeUsernameInput(value))}
@@ -75,7 +79,7 @@ const AddMemberModal = ({
         />
         <Dropdown
           label="권한 (role)"
-          placeholder="권한 선택"
+          placeholder={PLACEHOLDERS.selectRole}
           options={ROLE_OPTIONS}
           value={role}
           onChange={setRole}

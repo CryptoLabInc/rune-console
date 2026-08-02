@@ -11,7 +11,11 @@ import { useCreateTeamMutation } from "@/hooks/mutations/useTeamMutations";
 import { useTeamsTreeQuery } from "@/hooks/queries/useTeamsTreeQuery";
 import { parseErrorCode } from "@/api/parseError";
 import { cn } from "@/utils/cn";
-import { BTN_TEXT } from "@/constants/commonConstants";
+import {
+  BTN_TEXT,
+  FEEDBACK_TEXT,
+  PAGE_TITLES,
+} from "@/constants/commonConstants";
 import { TEAM_REASON } from "@/constants/errorConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import { useNoticeStore } from "@/stores/noticeStore";
@@ -120,18 +124,18 @@ const TeamsPage = () => {
 
   if (isPending) {
     return (
-      <section className={styles.panel} aria-label="팀 관리">
+      <section className={styles.panel} aria-label={PAGE_TITLES.teams}>
         <div className={styles.header} />
       </section>
     );
   }
   if (isError) {
     return (
-      <section className={styles.panel} aria-label="팀 관리">
+      <section className={styles.panel} aria-label={PAGE_TITLES.teams}>
         <Feedback
           state="error"
           title="팀 정보를 불러올 수 없습니다."
-          description="새로고침 후 다시 시도해 주세요."
+          description={FEEDBACK_TEXT.refreshRetry}
           className={feedbackPanel}
           action={
             <Button
@@ -148,7 +152,7 @@ const TeamsPage = () => {
   }
 
   return (
-    <section className={styles.panel} aria-label="팀 관리">
+    <section className={styles.panel} aria-label={PAGE_TITLES.teams}>
       <div className={styles.header}>
         <div className={styles.segment} role="group" aria-label="보기 전환">
           <button
