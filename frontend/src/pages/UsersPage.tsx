@@ -37,7 +37,14 @@ import { useUsersQuery } from "@/hooks/queries/useUsersQuery";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { parseErrorCode } from "@/api/parseError";
 import { ERROR_CODES, SESSION_STATUS } from "@/constants/apiConstants";
-import { BTN_TEXT, DEFAULT_PAGE_SIZE } from "@/constants/commonConstants";
+import {
+  ARIA_LABELS,
+  BTN_TEXT,
+  DEFAULT_PAGE_SIZE,
+  FEEDBACK_TEXT,
+  PAGE_TITLES,
+  TABLE_HEADERS,
+} from "@/constants/commonConstants";
 import { BATCH_REASON } from "@/constants/errorConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import type { TDropdownOption } from "@/types/commonTypes";
@@ -79,7 +86,7 @@ const buildGroupOptions = (teams: TTeamTree): TDropdownOption[] => [
 
 const SORT_OPTIONS: TDropdownOption[] = [
   { value: "last_invited", label: "최근 초대 코드 발송" },
-  { value: "username", label: "멤버 이름" },
+  { value: "username", label: TABLE_HEADERS.memberName },
 ];
 
 /** First membership as "team · role"; the rest collapse into "+n". */
@@ -290,11 +297,11 @@ const UsersPage = () => {
   /* ── SC-11 state C — 조회 실패 ──────────────────────────────────── */
   if (usersQuery.isError) {
     return (
-      <section className={styles.page} aria-label="멤버 관리">
+      <section className={styles.page} aria-label={PAGE_TITLES.users}>
         <Feedback
           state="error"
           title="멤버 정보를 불러올 수 없습니다."
-          description="새로고침 후 다시 시도해 주세요."
+          description={FEEDBACK_TEXT.refreshRetry}
           action={
             <Button
               btnText={BTN_TEXT.refresh}
@@ -313,7 +320,7 @@ const UsersPage = () => {
      all hidden) ─── */
   if (!usersQuery.isPending && total === 0 && !hasActiveFilter) {
     return (
-      <section className={styles.page} aria-label="멤버 관리">
+      <section className={styles.page} aria-label={PAGE_TITLES.users}>
         <Feedback
           state="empty"
           title="아직 초대한 멤버가 없습니다"
@@ -340,7 +347,7 @@ const UsersPage = () => {
   }
 
   return (
-    <section className={styles.page} aria-label="멤버 관리">
+    <section className={styles.page} aria-label={PAGE_TITLES.users}>
       <Table
         fluid
         /* Fixed page height: thead 36px + 10 rows × 49px (h-8 status chip
@@ -367,7 +374,7 @@ const UsersPage = () => {
                       value={sort}
                       onChange={withPageReset(setSort)}
                       size="sm"
-                      ariaLabel="정렬"
+                      ariaLabel={ARIA_LABELS.sort}
                       className="w-36"
                     />
                   </div>
@@ -443,14 +450,20 @@ const UsersPage = () => {
             <Checkbox
               checked={allSelected}
               onChange={toggleAll}
-              ariaLabel="전체 선택"
+              ariaLabel={ARIA_LABELS.selectAll}
             />
           </TableHeaderCell>
           {/* Fixed column widths — auto layout would resize per page's
               content and shift the headers while paginating. */}
-          <TableHeaderCell className="w-[40%]">멤버 이름</TableHeaderCell>
-          <TableHeaderCell className="w-[20%]">멤버 상태</TableHeaderCell>
-          <TableHeaderCell className="w-[40%]">팀 (권한)</TableHeaderCell>
+          <TableHeaderCell className="w-[40%]">
+            {TABLE_HEADERS.memberName}
+          </TableHeaderCell>
+          <TableHeaderCell className="w-[20%]">
+            {TABLE_HEADERS.memberStatus}
+          </TableHeaderCell>
+          <TableHeaderCell className="w-[40%]">
+            {TABLE_HEADERS.teamWithRole}
+          </TableHeaderCell>
         </TableHead>
         <tbody>
           {usersQuery.isPending && (

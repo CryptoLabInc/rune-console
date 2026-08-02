@@ -1,6 +1,10 @@
 import Button from "@/components/elements/Button";
 import ModalLayout from "@/components/layout/ModalLayout";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
+import {
+  BTN_TEXT,
+  MODAL_TITLES,
+  TABLE_HEADERS,
+} from "@/constants/commonConstants";
 
 export interface TRoleChange {
   account: string;
@@ -39,8 +43,8 @@ const RoleChangeConfirmModal = ({
         <table className={styles.table}>
           <thead>
             <tr>
-              <th className={styles.th}>멤버 이름</th>
-              <th className={styles.th}>권한 변경</th>
+              <th className={styles.th}>{TABLE_HEADERS.memberName}</th>
+              <th className={styles.th}>{TABLE_HEADERS.roleChange}</th>
             </tr>
           </thead>
           <tbody>

@@ -13,7 +13,14 @@ import TableRow from "@/components/table/TableRow";
 import { useInvitationHistoryQuery } from "@/hooks/queries/useInvitationHistoryQuery";
 import { cn } from "@/utils/cn";
 import { formatDateTime } from "@/utils/formatDate";
-import { BTN_TEXT, DEFAULT_PAGE_SIZE } from "@/constants/commonConstants";
+import {
+  ARIA_LABELS,
+  BTN_TEXT,
+  DEFAULT_PAGE_SIZE,
+  FEEDBACK_TEXT,
+  PAGE_TITLES,
+  TABLE_HEADERS,
+} from "@/constants/commonConstants";
 import type { TDropdownOption } from "@/types/commonTypes";
 
 const styles = {
@@ -26,9 +33,9 @@ const styles = {
    sort query params (console API design §6). No status filter or
    issuance button: issuance lives in user/team management. */
 const SORT_OPTIONS: TDropdownOption[] = [
-  { value: "username", label: "멤버 이름" },
+  { value: "username", label: TABLE_HEADERS.memberName },
   { value: "issued_at", label: "최근 발급 시간" },
-  { value: "last_access", label: "최근 접속 시간" },
+  { value: "last_access", label: TABLE_HEADERS.lastAccess },
 ];
 
 /**
@@ -75,7 +82,7 @@ const SessionsPage = () => {
   /* ── SC-16 state B — 조회 실패 ──────────────────────────────────── */
   if (historyQuery.isError) {
     return (
-      <section className={styles.page} aria-label="세션 기록">
+      <section className={styles.page} aria-label={PAGE_TITLES.sessions}>
         <Feedback
           state="error"
           /* Taller, fully centered variant — the SC-16 state B canvas
@@ -83,7 +90,7 @@ const SessionsPage = () => {
              default left-aligned 92px row. */
           className="flex min-h-45 flex-col items-center justify-center text-center"
           title="이력 정보를 불러올 수 없습니다."
-          description="새로고침 후 다시 시도해 주세요."
+          description={FEEDBACK_TEXT.refreshRetry}
           action={
             <Button
               btnText={BTN_TEXT.refresh}
@@ -100,7 +107,7 @@ const SessionsPage = () => {
 
   /* ── SC-16 state A — 기본 ───────────────────────────────────────── */
   return (
-    <section className={styles.page} aria-label="세션 기록">
+    <section className={styles.page} aria-label={PAGE_TITLES.sessions}>
       <Table
         fluid
         /* Fixed page height: thead 34px + 10 rows × 36px (h-9). Short
@@ -115,7 +122,7 @@ const SessionsPage = () => {
               value={sort}
               onChange={changeSort}
               size="sm"
-              ariaLabel="정렬"
+              ariaLabel={ARIA_LABELS.sort}
               className="w-40"
             />
           </div>
@@ -136,9 +143,15 @@ const SessionsPage = () => {
         {/* Fixed column widths — auto layout would resize per page's
             content and shift the headers while paginating. */}
         <TableHead>
-          <TableHeaderCell className="w-2/5">사용자</TableHeaderCell>
-          <TableHeaderCell className="w-[30%]">발급 시간</TableHeaderCell>
-          <TableHeaderCell className="w-[30%]">최근 접속 시간</TableHeaderCell>
+          <TableHeaderCell className="w-2/5">
+            {TABLE_HEADERS.user}
+          </TableHeaderCell>
+          <TableHeaderCell className="w-[30%]">
+            {TABLE_HEADERS.issuedAt}
+          </TableHeaderCell>
+          <TableHeaderCell className="w-[30%]">
+            {TABLE_HEADERS.lastAccess}
+          </TableHeaderCell>
         </TableHead>
         <tbody>
           {historyQuery.isPending && (
