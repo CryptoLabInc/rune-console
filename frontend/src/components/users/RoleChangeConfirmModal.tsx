@@ -9,6 +9,7 @@ import {
   MODAL_TITLES,
   TABLE_HEADERS,
 } from "@/constants/commonConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import type { TRoleChange } from "@/types/userTypes";
 
 const UPDATE_FAILED_MESSAGE = "권한 변경에 실패했습니다. 다시 시도해 주세요.";
@@ -82,7 +83,7 @@ const RoleChangeConfirmModal = ({
           <Notice tone="error">{UPDATE_FAILED_MESSAGE}</Notice>
         )}
       </div>
-      <div className="flex w-full items-center gap-4">
+      <div className={MODAL_STYLE_VAR.footer}>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"

@@ -16,6 +16,7 @@ import {
   PLACEHOLDERS,
 } from "@/constants/commonConstants";
 import { TEAM_NAME_DUPLICATE_TEXT } from "@/constants/errorConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 
 interface CreateTeamModalProps {
@@ -61,7 +62,7 @@ const CreateTeamModal = ({
 
   return (
     <ModalLayout title={MODAL_TITLES.createTeam} isOpen>
-      <div className="flex w-full flex-col gap-5">
+      <div className={MODAL_STYLE_VAR.body}>
         <Input
           id="create-team-name"
           labelText="팀 이름"
@@ -85,7 +86,7 @@ const CreateTeamModal = ({
         </Notice>
         {error && <Notice tone="error">{error}</Notice>}
       </div>
-      <div className="flex w-full gap-2">
+      <div className={MODAL_STYLE_VAR.footerCompact}>
         <Button
           btnText={BTN_TEXT.cancel}
           btnSize="md"

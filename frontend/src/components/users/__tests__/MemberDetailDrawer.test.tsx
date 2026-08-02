@@ -3,10 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import MemberDetailDrawer from "@/components/users/MemberDetailDrawer";
+import { formatDate, formatDateTime } from "@/utils/formatDate";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import type { TBatchResult, TTeamTree } from "@/types/teamTypes";
 import type { TUserListItem } from "@/types/userTypes";
-import { formatDate, formatDateTime } from "@/utils/formatDate";
 import { useNoticeStore } from "@/stores/noticeStore";
 
 /** Minimal team fixture — matches the user's one membership plus a
@@ -71,9 +71,7 @@ describe("MemberDetailDrawer", () => {
     render(<MemberDetailDrawer {...baseProps()} />);
     /* Header shows the display name as the title and the account (the
        identifier) right below it. */
-    expect(
-      screen.getByRole("heading", { name: "김철수" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "김철수" })).toBeInTheDocument();
     expect(screen.getByText("k@corp.com")).toBeInTheDocument();
     expect(screen.getByText("백엔드")).toBeInTheDocument();
   });
@@ -170,17 +168,17 @@ describe("MemberDetailDrawer", () => {
 
     await user.click(screen.getByRole("button", { name: "백엔드 role" }));
     await user.click(screen.getByRole("option", { name: "write" }));
-    expect(screen.getByRole("button", { name: "백엔드 role" })).toHaveTextContent(
-      "write",
-    );
+    expect(
+      screen.getByRole("button", { name: "백엔드 role" }),
+    ).toHaveTextContent("write");
     await user.click(reset);
 
     /* The staged pick is gone: the dropdown shows the saved role again
        and both staged-change buttons drop back to disabled. Reset is
        purely client-side staging — no batch call fires. */
-    expect(screen.getByRole("button", { name: "백엔드 role" })).toHaveTextContent(
-      "edit",
-    );
+    expect(
+      screen.getByRole("button", { name: "백엔드 role" }),
+    ).toHaveTextContent("edit");
     expect(reset).toBeDisabled();
     expect(
       screen.getByRole("button", { name: BTN_TEXT.updateChanges }),

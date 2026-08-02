@@ -23,6 +23,7 @@ import {
   PLACEHOLDERS,
   TABLE_HEADERS,
 } from "@/constants/commonConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 import type { TInvitePayload, TInviteResult } from "@/types/userTypes";
 
@@ -254,7 +255,7 @@ const InviteMemberModal = ({
         )}
       </div>
 
-      <div className="flex w-full items-center gap-4">
+      <div className={MODAL_STYLE_VAR.footer}>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"
