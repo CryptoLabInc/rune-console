@@ -13,6 +13,7 @@ import {
   MODAL_TITLES,
   PLACEHOLDERS,
 } from "@/constants/commonConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 
 const styles = {
@@ -72,7 +73,7 @@ const DeleteTeamModal = ({
   if (hasChildren) {
     return (
       <ModalLayout title={MODAL_TITLES.deleteTeam(teamName)} isOpen>
-        <p className="text-center text-base">
+        <p className={MODAL_STYLE_VAR.message}>
           하위 팀이 있는 팀은 삭제할 수 없습니다.
           <br />
           하위 팀을 먼저 삭제한 후 다시 시도해 주세요.
@@ -116,7 +117,7 @@ const DeleteTeamModal = ({
 
   return (
     <ModalLayout title={MODAL_TITLES.deleteTeam(teamName)} isOpen isWide>
-      <div className="flex w-full flex-col gap-4">
+      <div className={MODAL_STYLE_VAR.body}>
         <Notice tone="info">
           삭제하려는 팀의 기억 처리 방식을 선택해 주세요.
         </Notice>
@@ -194,7 +195,7 @@ const DeleteTeamModal = ({
         {error && <Notice tone="error">{error}</Notice>}
       </div>
 
-      <div className="flex w-full gap-2">
+      <div className={MODAL_STYLE_VAR.footerCompact}>
         <Button
           btnText={BTN_TEXT.cancel}
           btnSize="md"

@@ -169,7 +169,9 @@ describe("SessionsPage", () => {
       "page",
     );
     /* username asc — a@corp.com's row ("a 사용자") leads the first page. */
-    expect(await screen.findByText(usernameOf("a@corp.com"))).toBeInTheDocument();
+    expect(
+      await screen.findByText(usernameOf("a@corp.com")),
+    ).toBeInTheDocument();
   });
 
   it("shows the fixed page-size footer", async () => {

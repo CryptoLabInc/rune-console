@@ -84,6 +84,21 @@ export const BADGE_TONE_VAR = {
   neutral: "bg-muted-foreground/12 text-muted-foreground",
 } as const;
 
+/* Shared modal building blocks — the ModalLayout children every confirm
+   modal composes. One source so the copies can't drift (the body gap had
+   already split into gap-4 vs gap-5 before this was centralized). */
+export const MODAL_STYLE_VAR = {
+  /* Centered single-line message (alert/failure bodies). */
+  message: "text-center text-base",
+  /* Vertical form/content stack. */
+  body: "flex w-full flex-col gap-4",
+  /* Button row. Two variants are in active use — the users-flow modals
+     space with gap-4, the team/workspace ones with gap-2. Kept as named
+     variants until a design pass picks one. */
+  footer: "flex w-full items-center gap-4",
+  footerCompact: "flex w-full gap-2",
+} as const;
+
 /* Session chips — the only status a list view shows. The satisfies clause
    keys this map to the status union: adding/renaming a status value is a
    compile error here until the label map follows. */

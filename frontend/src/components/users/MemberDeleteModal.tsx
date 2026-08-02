@@ -8,6 +8,7 @@ import {
   MODAL_TITLES,
   TABLE_HEADERS,
 } from "@/constants/commonConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import type { TMemberDeleteTarget } from "@/types/userTypes";
 
 const DELETE_FAILED_MESSAGE = "멤버 삭제에 실패했습니다. 다시 시도해 주세요.";
@@ -75,7 +76,7 @@ const MemberDeleteModal = ({
   if (failed) {
     return (
       <ModalLayout title={title} isOpen>
-        <p className="text-center text-base">{DELETE_FAILED_MESSAGE}</p>
+        <p className={MODAL_STYLE_VAR.message}>{DELETE_FAILED_MESSAGE}</p>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"
@@ -110,7 +111,7 @@ const MemberDeleteModal = ({
           </>
         )}
       </div>
-      <div className="flex w-full items-center gap-4">
+      <div className={MODAL_STYLE_VAR.footer}>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"

@@ -9,9 +9,11 @@ import Pagination from "@/components/elements/Pagination";
 import SearchInput from "@/components/elements/SearchInput";
 import Table from "@/components/table/Table";
 import TableCell from "@/components/table/TableCell";
+import TableEmptyRow from "@/components/table/TableEmptyRow";
 import TableFoot from "@/components/table/TableFoot";
 import TableHead from "@/components/table/TableHead";
 import TableHeaderCell from "@/components/table/TableHeaderCell";
+import TableLoadingRow from "@/components/table/TableLoadingRow";
 import TableRow from "@/components/table/TableRow";
 import MemberBatchFailureModal from "@/components/teams/MemberBatchFailureModal";
 import { buildTeamOptions } from "@/components/teams/teamOptions";
@@ -458,25 +460,9 @@ const UsersPage = () => {
           </TableHeaderCell>
         </TableHead>
         <tbody>
-          {usersQuery.isPending && (
-            <tr>
-              <td
-                colSpan={4}
-                className="text-faint px-3 py-8 text-center text-sm"
-              >
-                불러오는 중…
-              </td>
-            </tr>
-          )}
+          {usersQuery.isPending && <TableLoadingRow colSpan={4} />}
           {!usersQuery.isPending && users.length === 0 && (
-            <tr>
-              <td
-                colSpan={4}
-                className="text-muted-foreground border-t px-3 py-8 text-center text-sm"
-              >
-                검색 결과가 없습니다.
-              </td>
-            </tr>
+            <TableEmptyRow colSpan={4}>검색 결과가 없습니다.</TableEmptyRow>
           )}
           {users.map((user) => {
             const { summary, extra } = membershipSummary(user);

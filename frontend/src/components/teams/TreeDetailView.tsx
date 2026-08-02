@@ -7,21 +7,23 @@ import MemberStatus from "@/components/elements/MemberStatus";
 import Pagination from "@/components/elements/Pagination";
 import Table from "@/components/table/Table";
 import TableCell from "@/components/table/TableCell";
+import TableEmptyRow from "@/components/table/TableEmptyRow";
 import TableErrorRow from "@/components/table/TableErrorRow";
 import TableFoot from "@/components/table/TableFoot";
 import TableHead from "@/components/table/TableHead";
 import TableHeaderCell from "@/components/table/TableHeaderCell";
+import TableLoadingRow from "@/components/table/TableLoadingRow";
 import TableRow from "@/components/table/TableRow";
 import AddMemberModal from "@/components/teams/AddMemberModal";
 import CreateTeamModal from "@/components/teams/CreateTeamModal";
 import DeleteTeamModal from "@/components/teams/DeleteTeamModal";
 import MemberBatchFailureModal from "@/components/teams/MemberBatchFailureModal";
-import RemoveMembershipModal from "@/components/teams/RemoveMembershipModal";
 import RenameTeamModal from "@/components/teams/RenameTeamModal";
-import RoleChangeConfirmModal from "@/components/teams/RoleChangeConfirmModal";
 import { ROLE_OPTIONS } from "@/components/teams/teamOptions";
 import TeamTree from "@/components/tree/TeamTree";
+import MembershipRemoveModal from "@/components/users/MembershipRemoveModal";
 import { CHIP_STATUS } from "@/components/users/memberStatusMap";
+import RoleChangeConfirmModal from "@/components/users/RoleChangeConfirmModal";
 import {
   useAddTeamMemberMutation,
   useBulkRoleChangeMutation,
@@ -60,6 +62,7 @@ import {
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import type { TTeamNode } from "@/types/commonTypes";
 import type { TTeamMemberRole, TTeamTree } from "@/types/teamTypes";
+import type { TRoleChange } from "@/types/userTypes";
 import { useNoticeStore } from "@/stores/noticeStore";
 
 const styles = {
@@ -252,11 +255,6 @@ const TreeDetailView = ({
   const applyRoleChanges = () => {
     setSavedRoles((prev) => new Map([...prev, ...pendingRoles]));
     setPendingRoles(new Map());
-    showNotice(
-      NOTICE_TEXT.roleChange.title,
-      NOTICE_TEXT.roleChange.success,
-      "success",
-    );
   };
 
   /* Modals (SC-07~10 + SC-06 state E). All confirm handlers below call
@@ -283,14 +281,17 @@ const TreeDetailView = ({
 
   const [addError, setAddError] = useState<string | null>(null);
 
-  const roleChanges = [...pendingRoles.entries()].map(([userId, to]) => {
-    const member = members.find((m) => m.userId === userId);
-    return {
-      account: member?.account ?? userId,
-      from: baseRole(userId, member?.role ?? TEAM_MEMBER_ROLE.read),
-      to,
-    };
-  });
+  /* Staged picks as confirm-modal rows (TRoleChange: label = account). */
+  const roleChanges: TRoleChange[] = [...pendingRoles.entries()].map(
+    ([userId, to]) => {
+      const member = members.find((m) => m.userId === userId);
+      return {
+        label: member?.account ?? userId,
+        from: baseRole(userId, member?.role ?? TEAM_MEMBER_ROLE.read),
+        to,
+      };
+    },
+  );
 
   const handleCreate = (name: string, parentId: string | null) => {
     setTeamError(null);
@@ -382,89 +383,73 @@ const TreeDetailView = ({
       },
     );
   };
-  const handleRoleConfirm = () => {
+  /* The confirm modal owns the E-1/E-2 result view: a resolved promise
+     shows the in-modal success message, a rejected one the failure
+     message ([닫기] alone remains). Partial failures additionally open
+     the batch-failure modal, mirroring the SC-13 drawer flow. */
+  const handleRoleConfirm = async () => {
     const updates = [...pendingRoles.entries()].map(([userId, role]) => ({
       userId,
       role,
     }));
-    bulkRole.mutate(
-      { updates },
-      {
-        onSuccess: (result) => {
-          closeModal();
-          if (result.failed.length > 0) {
-            /* Only clear staging for what actually succeeded — keep the
-               failed entries pending so the user can retry them. */
-            const failedIds = new Set(result.failed.map((f) => f.id));
-            setSavedRoles(
-              (prev) =>
-                new Map([
-                  ...prev,
-                  ...[...pendingRoles.entries()].filter(
-                    ([userId]) => !failedIds.has(userId),
-                  ),
-                ]),
-            );
-            setPendingRoles(
-              (prev) =>
-                new Map([...prev].filter(([userId]) => failedIds.has(userId))),
-            );
-            showBatchFailures(
-              toBatchFailureRows(
-                result.failed,
-                accountOf,
-                () => BATCH_REASON_FALLBACK,
-              ),
-            );
-          } else {
-            applyRoleChanges();
-          }
-        },
-        onError: () => {
-          closeModal();
-          showNotice(
-            NOTICE_TEXT.roleChange.title,
-            NOTICE_TEXT.roleChange.failure,
-            "error",
-          );
-        },
-      },
-    );
+    const result = await bulkRole.mutateAsync({ updates });
+    if (result.failed.length > 0) {
+      /* Only clear staging for what actually succeeded — keep the
+         failed entries pending so the user can retry them. */
+      const failedIds = new Set(result.failed.map((f) => f.id));
+      setSavedRoles(
+        (prev) =>
+          new Map([
+            ...prev,
+            ...[...pendingRoles.entries()].filter(
+              ([userId]) => !failedIds.has(userId),
+            ),
+          ]),
+      );
+      setPendingRoles(
+        (prev) =>
+          new Map([...prev].filter(([userId]) => failedIds.has(userId))),
+      );
+      showBatchFailures(
+        toBatchFailureRows(
+          result.failed,
+          accountOf,
+          () => BATCH_REASON_FALLBACK,
+        ),
+      );
+    } else {
+      applyRoleChanges();
+    }
   };
-  const handleRemoveMembers = () => {
+  /* The remove modal closes itself on resolve and swaps to its failure
+     view on reject — only the full-success notice and the partial-failure
+     modal are driven from here. */
+  const handleRemoveMembers = async () => {
     const ids = [...selectedIds];
-    removeMembers.mutate(ids, {
-      onSuccess: (result) => {
-        closeModal();
-        clearSelection();
-        if (result.failed.length > 0) {
-          showBatchFailures(
-            toBatchFailureRows(result.failed, accountOf, (code) => code),
-          );
-        } else {
-          showNotice(
-            NOTICE_TEXT.removeMembership.title,
-            NOTICE_TEXT.removeMembership.success,
-            "success",
-          );
-        }
-      },
-      onError: () => {
-        closeModal();
-        showNotice(
-          NOTICE_TEXT.removeMembership.title,
-          NOTICE_TEXT.removeMembership.failure,
-          "error",
-        );
-      },
-    });
+    const result = await removeMembers.mutateAsync(ids);
+    clearSelection();
+    if (result.failed.length > 0) {
+      showBatchFailures(
+        toBatchFailureRows(result.failed, accountOf, (code) => code),
+      );
+    } else {
+      showNotice(
+        NOTICE_TEXT.removeMembership.title,
+        NOTICE_TEXT.removeMembership.success,
+        "success",
+      );
+    }
   };
 
-  /* SC-14 payload: the checked members' account · current role. */
+  /* SC-14 payload: the checked members' account × this team · current
+     role (TMembershipRemoveTarget — the SC-06 entry is members × the
+     one selected team). */
   const membershipRemovals = members
     .filter((member) => selectedIds.has(member.userId))
     .map((member) => ({
       account: member.account,
+      teamId: selectedTeam.id,
+      teamName: selectedTeam.name,
       role:
         pendingRoles.get(member.userId) ?? baseRole(member.userId, member.role),
     }));
@@ -605,28 +590,14 @@ const TreeDetailView = ({
           </TableHead>
           <tbody>
             {membersQuery.isPending ? (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="text-faint px-3 py-6 text-center text-sm"
-                >
-                  불러오는 중…
-                </td>
-              </tr>
+              <TableLoadingRow colSpan={5} />
             ) : membersQuery.isError ? (
               <TableErrorRow
                 message="멤버 목록을 불러올 수 없습니다."
                 colSpan={5}
               />
             ) : total === 0 ? (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="text-faint px-3 py-6 text-center text-sm"
-                >
-                  멤버가 없습니다.
-                </td>
-              </tr>
+              <TableEmptyRow colSpan={5}>멤버가 없습니다.</TableEmptyRow>
             ) : (
               members.map((member) => (
                 <TableRow
@@ -716,15 +687,16 @@ const TreeDetailView = ({
       )}
       {activeModal === "roleConfirm" && (
         <RoleChangeConfirmModal
+          subjectLabel={TABLE_HEADERS.account}
           changes={roleChanges}
           onClose={closeModal}
           onConfirm={handleRoleConfirm}
         />
       )}
       {activeModal === "removeMembers" && (
-        <RemoveMembershipModal
-          teamName={selectedTeam.name}
-          members={membershipRemovals}
+        <MembershipRemoveModal
+          targets={membershipRemovals}
+          subteamNotice
           onClose={closeModal}
           onConfirm={handleRemoveMembers}
         />
