@@ -64,13 +64,23 @@ export const BTN_TEXT = {
   deleteMember: "멤버 삭제",
 } as const;
 
+/** PAGE_TITLES is the page/section vocabulary — shared by the main nav,
+ * each page's <section aria-label>, and the workspace modal title, so the
+ * same screen is never named two different things. */
+export const PAGE_TITLES = {
+  teams: "팀 관리",
+  users: "멤버 관리",
+  sessions: "세션 기록",
+  workspace: "워크스페이스 관리",
+} as const;
+
 /** MODAL_TITLES is the single source of truth for ModalLayout titles across
  * the console modals, mirroring BTN_TEXT so a wording change lands in one
  * place. Titles that embed a name or count are functions; the rest are plain
  * strings. */
 export const MODAL_TITLES = {
   // Workspace
-  workspaceManage: "워크스페이스 관리",
+  workspaceManage: PAGE_TITLES.workspace,
   workspaceDelete: "워크스페이스 삭제",
   workspaceOrphaned: "워크스페이스 재생성 필요",
   workspaceReconnect: "워크스페이스 재연결 필요",
@@ -101,10 +111,61 @@ export const PATH_LIST = {
 } as const;
 
 export const NAV_LIST = [
-  { title: "팀 관리", url: PATH_LIST.teams },
-  { title: "멤버 관리", url: PATH_LIST.users },
-  { title: "세션 기록", url: PATH_LIST.sessions },
+  { title: PAGE_TITLES.teams, url: PATH_LIST.teams },
+  { title: PAGE_TITLES.users, url: PATH_LIST.users },
+  { title: PAGE_TITLES.sessions, url: PATH_LIST.sessions },
 ] as const;
+
+/** TABLE_HEADERS is the column-header copy shared across the list tables,
+ * the modal tables, and the sort-option labels that mirror a column. */
+export const TABLE_HEADERS = {
+  memberName: "멤버 이름",
+  memberStatus: "멤버 상태",
+  team: "팀",
+  teamWithRole: "팀 (권한)",
+  role: "권한",
+  /* TreeDetailView's member table says 역할 while every other role column
+     says 권한 — kept verbatim pending a copy decision; unifying is a
+     one-line change here once decided. */
+  roleAlt: "역할",
+  roleChange: "권한 변경",
+  joinedAt: "합류일",
+  account: "account",
+  reason: "사유",
+  user: "사용자",
+  issuedAt: "발급 시간",
+  lastAccess: "최근 접속 시간",
+} as const;
+
+/** Form-field copy shared by the invite (SC-12) and add-member (SC-06)
+ * forms — labels are also how tests and screen readers find the fields. */
+export const INPUT_LABELS = {
+  emailAccount: "이메일 (account)",
+  username: "사용자 이름 (username)",
+} as const;
+
+export const PLACEHOLDERS = {
+  selectTeam: "팀 선택",
+  selectRole: "권한 선택",
+  /** Team picker when every team is already joined (SC-13 add row). */
+  noAddableTeam: "추가할 팀 없음",
+  emailExample: "user@corp.com",
+  username: "사용자 이름",
+} as const;
+
+/** Icon/control aria-labels used on more than one screen — centralized so
+ * assistive tech hears the same name everywhere (they had already drifted:
+ * "전체 선택" vs "전체선택"). */
+export const ARIA_LABELS = {
+  selectAll: "전체 선택",
+  sort: "정렬",
+} as const;
+
+/** Shared Feedback copy — per-screen titles stay local; only the copy that
+ * repeats across screens lives here. */
+export const FEEDBACK_TEXT = {
+  refreshRetry: "새로고침 후 다시 시도해 주세요.",
+} as const;
 
 export const QUERY_KEYS = {
   teamsTree: "teamsTree",

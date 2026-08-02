@@ -37,7 +37,12 @@ import { useTeamQuery } from "@/hooks/queries/useTeamQuery";
 import { parseErrorCode } from "@/api/parseError";
 import { formatDate } from "@/utils/formatDate";
 import { TEAM_MEMBER_ROLE } from "@/constants/apiConstants";
-import { BTN_TEXT, DEFAULT_PAGE_SIZE } from "@/constants/commonConstants";
+import {
+  ARIA_LABELS,
+  BTN_TEXT,
+  DEFAULT_PAGE_SIZE,
+  TABLE_HEADERS,
+} from "@/constants/commonConstants";
 import {
   ADD_MEMBER_REASON,
   BATCH_REASON,
@@ -150,10 +155,7 @@ const TreeDetailView = ({
   /* Derived once per teams array — this component re-renders on every
      keystroke/checkbox/staged edit, and the tree build must not re-run
      for those (OrgChart applies the same rule). */
-  const flatById = useMemo(
-    () => new Map(teams.map((t) => [t.id, t])),
-    [teams],
-  );
+  const flatById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams]);
   const teamNodes = useMemo(() => buildTeamNodes(teams), [teams]);
   /* Fallback selection — the first top-level team (SC-06 entry rule). */
   const defaultTeam = teamNodes[0];
@@ -591,15 +593,23 @@ const TreeDetailView = ({
               <Checkbox
                 checked={allSelected}
                 onChange={toggleAll}
-                ariaLabel="전체 선택"
+                ariaLabel={ARIA_LABELS.selectAll}
               />
             </TableHeaderCell>
             {/* Fixed column widths — auto layout would resize per
                 page's content and shift the headers while paginating. */}
-            <TableHeaderCell className="w-[36%]">멤버 이름</TableHeaderCell>
-            <TableHeaderCell className="w-[18%]">멤버 상태</TableHeaderCell>
-            <TableHeaderCell className="w-[28%]">역할</TableHeaderCell>
-            <TableHeaderCell className="w-[18%]">합류일</TableHeaderCell>
+            <TableHeaderCell className="w-[36%]">
+              {TABLE_HEADERS.memberName}
+            </TableHeaderCell>
+            <TableHeaderCell className="w-[18%]">
+              {TABLE_HEADERS.memberStatus}
+            </TableHeaderCell>
+            <TableHeaderCell className="w-[28%]">
+              {TABLE_HEADERS.roleAlt}
+            </TableHeaderCell>
+            <TableHeaderCell className="w-[18%]">
+              {TABLE_HEADERS.joinedAt}
+            </TableHeaderCell>
           </TableHead>
           <tbody>
             {membersQuery.isPending ? (

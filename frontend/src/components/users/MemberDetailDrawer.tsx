@@ -28,7 +28,12 @@ import {
   INVITATION_STATUS,
   SESSION_STATUS,
 } from "@/constants/apiConstants";
-import { BTN_TEXT } from "@/constants/commonConstants";
+import {
+  ARIA_LABELS,
+  BTN_TEXT,
+  PLACEHOLDERS,
+  TABLE_HEADERS,
+} from "@/constants/commonConstants";
 import {
   BATCH_REASON,
   BATCH_REASON_FALLBACK,
@@ -330,11 +335,13 @@ const MemberDetailDrawer = ({
                         : new Set(),
                     )
                   }
-                  ariaLabel="전체선택"
+                  ariaLabel={ARIA_LABELS.selectAll}
                 />
               </TableHeaderCell>
-              <TableHeaderCell>팀</TableHeaderCell>
-              <TableHeaderCell className="w-[104px]">권한</TableHeaderCell>
+              <TableHeaderCell>{TABLE_HEADERS.team}</TableHeaderCell>
+              <TableHeaderCell className="w-26">
+                {TABLE_HEADERS.role}
+              </TableHeaderCell>
             </TableHead>
             <tbody>
               {memberships.length === 0 ? (
@@ -407,7 +414,9 @@ const MemberDetailDrawer = ({
               <Dropdown
                 options={addableTeams}
                 placeholder={
-                  addableTeams.length === 0 ? "추가할 팀 없음" : "팀 선택"
+                  addableTeams.length === 0
+                    ? PLACEHOLDERS.noAddableTeam
+                    : PLACEHOLDERS.selectTeam
                 }
                 value={addTeamId}
                 onChange={setAddTeamId}
@@ -418,7 +427,7 @@ const MemberDetailDrawer = ({
               />
               <Dropdown
                 options={ROLE_OPTIONS}
-                placeholder="권한 선택"
+                placeholder={PLACEHOLDERS.selectRole}
                 value={addRole}
                 onChange={setAddRole}
                 size="sm"

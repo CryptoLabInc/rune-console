@@ -4,7 +4,11 @@ import Button from "@/components/elements/Button";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
 import ModalTable from "@/components/users/ModalTable";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
+import {
+  BTN_TEXT,
+  MODAL_TITLES,
+  TABLE_HEADERS,
+} from "@/constants/commonConstants";
 import type { TMembershipRemoveTarget } from "@/types/userTypes";
 
 const REMOVE_FAILED_MESSAGE = `멤버십 제거에 실패했습니다. 다시 시도해 주세요.`;
@@ -69,7 +73,7 @@ const MembershipRemoveModal = ({
       <div className="flex flex-col gap-4">
         <p className="text-base">다음 멤버십을 제거합니다:</p>
         <ModalTable
-          head={["account", "팀", "권한"]}
+          head={[TABLE_HEADERS.account, TABLE_HEADERS.team, TABLE_HEADERS.role]}
           rows={targets.map((target) => [
             target.account,
             target.teamName,

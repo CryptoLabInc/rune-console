@@ -10,7 +10,11 @@ import {
   TEAM_NAME_PATTERN,
   TEAM_NAME_RULE_TEXT,
 } from "@/components/teams/teamOptions";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
+import {
+  BTN_TEXT,
+  MODAL_TITLES,
+  PLACEHOLDERS,
+} from "@/constants/commonConstants";
 import { TEAM_NAME_DUPLICATE_TEXT } from "@/constants/errorConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 
@@ -70,7 +74,7 @@ const CreateTeamModal = ({
         />
         <Dropdown
           label="상위 팀 (선택)"
-          placeholder="팀 선택"
+          placeholder={PLACEHOLDERS.selectTeam}
           options={buildTeamOptions(teams)}
           value={parentId}
           onChange={setParentId}

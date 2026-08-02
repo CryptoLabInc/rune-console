@@ -8,7 +8,11 @@ import Radio from "@/components/elements/Radio";
 import ModalLayout from "@/components/layout/ModalLayout";
 import { buildTeamOptions } from "@/components/teams/teamOptions";
 import { cn } from "@/utils/cn";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
+import {
+  BTN_TEXT,
+  MODAL_TITLES,
+  PLACEHOLDERS,
+} from "@/constants/commonConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 
 const styles = {
@@ -136,7 +140,7 @@ const DeleteTeamModal = ({
           <div className={styles.optionFields}>
             <Dropdown
               label="이전받을 팀"
-              placeholder="팀 선택"
+              placeholder={PLACEHOLDERS.selectTeam}
               options={targetOptions}
               value={targetTeamId}
               onChange={setTargetTeamId}

@@ -9,7 +9,7 @@ import {
   useWorkspaceQuery,
 } from "@/hooks/queries/useWorkspaceQuery";
 import { WORKSPACE_STATUS } from "@/constants/apiConstants";
-import { PATH_LIST } from "@/constants/commonConstants";
+import { PAGE_TITLES, PATH_LIST } from "@/constants/commonConstants";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 const panelClass =
@@ -63,7 +63,7 @@ const WorkspacePage = () => {
   const exists = workspace != null;
   const transitional = exists && isTransitionalStatus(workspace.status);
 
-  if (isLoading) return <section aria-label="워크스페이스 관리" />;
+  if (isLoading) return <section aria-label={PAGE_TITLES.workspace} />;
 
   /* A workspace exists → go to the console. The one exception is our own
      create still provisioning: stay and keep the spinner until it runs. */
@@ -85,7 +85,7 @@ const WorkspacePage = () => {
     transitional;
 
   return (
-    <section aria-label="워크스페이스 관리">
+    <section aria-label={PAGE_TITLES.workspace}>
       {creating ? (
         <Feedback
           state="loading"
