@@ -10,8 +10,8 @@ import WorkspacePage from "@/pages/WorkspacePage";
 import LandingRedirect from "@/components/auth/LandingRedirect";
 import RequireAuth from "@/components/auth/RequireAuth";
 import NoticeModal from "@/components/elements/NoticeModal";
+import ToastContainer from "@/components/elements/ToastContainer";
 import AppLayout from "@/components/layout/AppLayout";
-import ToastContainer from "@/components/toast/ToastContainer";
 import { PATH_LIST } from "@/constants/commonConstants";
 
 /* Dev-only UI showcase — the import.meta.env.DEV guard is statically false in

@@ -3,8 +3,8 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import WorkspacePage from "@/pages/WorkspacePage";
-import type { TWorkspace } from "@/types/commonTypes";
-import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { useWorkspaceStore } from "@/state/store/workspaceStore";
+import type { TWorkspace } from "@/types/workspaceTypes";
 
 /* Server state is mocked; the page renders only while no workspace exists
    (query → null), which is exactly the post-teardown handoff situation. */

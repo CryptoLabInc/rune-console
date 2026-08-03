@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  getTeamDescendantIds,
-  getTeamName,
-} from "@/components/teams/teamHierarchy";
+import { getTeamDescendantIds, getTeamName } from "@/utils/teamHierarchy";
 import type { TTeamTree } from "@/types/teamTypes";
 
 /** Minimal 3-node chain: t_1 root → t_2 child → t_3 grandchild. */

@@ -6,7 +6,6 @@ import Input from "@/components/elements/Input";
 import MemberStatus from "@/components/elements/MemberStatus";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
-import { ROLE_OPTIONS } from "@/components/teams/teamOptions";
 import { EMAIL_FORMAT_ERROR, EMAIL_PATTERN } from "@/utils/email";
 import {
   isSubmittableUsername,
@@ -21,6 +20,7 @@ import {
   PLACEHOLDERS,
 } from "@/constants/commonConstants";
 import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
+import { ROLE_OPTIONS } from "@/constants/teamConstants";
 
 interface AddMemberModalProps {
   teamName: string;

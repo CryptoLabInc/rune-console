@@ -16,11 +16,9 @@ import TableHeaderCell from "@/components/table/TableHeaderCell";
 import TableLoadingRow from "@/components/table/TableLoadingRow";
 import TableRow from "@/components/table/TableRow";
 import MemberBatchFailureModal from "@/components/teams/MemberBatchFailureModal";
-import { buildTeamOptions } from "@/components/teams/teamOptions";
 import InviteMemberModal from "@/components/users/InviteMemberModal";
 import MemberDeleteModal from "@/components/users/MemberDeleteModal";
 import MemberDetailDrawer from "@/components/users/MemberDetailDrawer";
-import { CHIP_STATUS } from "@/components/users/memberStatusMap";
 import {
   useCancelInvitation,
   useDeleteUsers,
@@ -47,6 +45,8 @@ import {
   useSyncPaginationTotal,
 } from "@/hooks/useServerPagination";
 import { parseErrorCode } from "@/api/parseError";
+import { useNoticeStore } from "@/state/store/noticeStore";
+import { buildTeamOptions } from "@/utils/buildTeamOptions";
 import { ERROR_CODES, SESSION_STATUS } from "@/constants/apiConstants";
 import {
   ARIA_LABELS,
@@ -57,6 +57,7 @@ import {
   TABLE_HEADERS,
 } from "@/constants/commonConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
+import { CHIP_STATUS } from "@/constants/userConstants";
 import type { TDropdownOption } from "@/types/commonTypes";
 import type { TTeamMemberRole, TTeamTree } from "@/types/teamTypes";
 import type {
@@ -64,7 +65,6 @@ import type {
   TInviteResult,
   TUserListItem,
 } from "@/types/userTypes";
-import { useNoticeStore } from "@/stores/noticeStore";
 
 const styles = {
   page: "flex flex-col gap-3.5 p-4",

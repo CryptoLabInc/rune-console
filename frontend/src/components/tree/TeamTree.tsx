@@ -3,12 +3,12 @@ import { useMemo, useState } from "react";
 import Feedback from "@/components/elements/Feedback";
 import TreeNode from "@/components/tree/TreeNode";
 import { cn } from "@/utils/cn";
-import type { TTeamNode } from "@/types/commonTypes";
+import type { TTeamViewNode } from "@/types/teamTypes";
 
 interface TeamTreeProps {
-  teams: TTeamNode[];
+  teams: TTeamViewNode[];
   selectedId?: string;
-  onSelect: (node: TTeamNode) => void;
+  onSelect: (node: TTeamViewNode) => void;
   /** Case-insensitive filter — a node matches if it or a descendant matches. */
   query?: string;
   defaultExpandedIds?: string[];
@@ -18,7 +18,7 @@ interface TeamTreeProps {
 }
 
 interface TFilterResult {
-  nodes: TTeamNode[];
+  nodes: TTeamViewNode[];
   /** Nodes kept only because a descendant matched — auto-expanded so the
       match is actually visible (2차-B spec: ancestors stay open). */
   autoExpandIds: string[];
@@ -29,19 +29,21 @@ interface TFilterResult {
  * whole subtree (context); otherwise only children leading to a match
  * survive. `query` must already be trimmed + lowercased.
  */
-const filterTree = (teams: TTeamNode[], query: string): TFilterResult => {
+const filterTree = (teams: TTeamViewNode[], query: string): TFilterResult => {
   const autoExpandIds: string[] = [];
-  const prune = (node: TTeamNode): TTeamNode | null => {
+  const prune = (node: TTeamViewNode): TTeamViewNode | null => {
     if (node.name.toLocaleLowerCase().includes(query)) return node;
     const children = (node.children ?? [])
       .map(prune)
-      .filter((child): child is TTeamNode => child !== null);
+      .filter((child): child is TTeamViewNode => child !== null);
     if (children.length === 0) return null;
     autoExpandIds.push(node.id);
     return { ...node, children };
   };
   return {
-    nodes: teams.map(prune).filter((node): node is TTeamNode => node !== null),
+    nodes: teams
+      .map(prune)
+      .filter((node): node is TTeamViewNode => node !== null),
     autoExpandIds,
   };
 };

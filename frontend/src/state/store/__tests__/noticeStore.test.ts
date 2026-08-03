@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useNoticeStore } from "@/stores/noticeStore";
+import { useNoticeStore } from "@/state/store/noticeStore";
 
 describe("noticeStore", () => {
   beforeEach(() => {
