@@ -119,7 +119,7 @@ const WorkspaceModal = () => {
           <br />
           삭제 후에는 되돌릴 수 없습니다.
         </p>
-        <div className={MODAL_STYLE_VAR.footerCompact}>
+        <div className={MODAL_STYLE_VAR.footer}>
           <Button
             btnText={BTN_TEXT.close}
             btnSize="md"
@@ -171,7 +171,7 @@ const WorkspaceModal = () => {
             삭제 후 재생성하면 빈 워크스페이스로 다시 시작합니다.
           </p>
         )}
-        <div className={MODAL_STYLE_VAR.footerCompact}>
+        <div className={MODAL_STYLE_VAR.footer}>
           <Button
             btnText={BTN_TEXT.close}
             btnSize="md"
@@ -216,7 +216,7 @@ const WorkspaceModal = () => {
             재연결에 실패했습니다. 다시 시도해 주세요.
           </Notice>
         )}
-        <div className={MODAL_STYLE_VAR.footerCompact}>
+        <div className={MODAL_STYLE_VAR.footer}>
           <Button
             btnText={BTN_TEXT.close}
             btnSize="md"
