@@ -2,29 +2,21 @@ import { useState } from "react";
 
 import Button from "@/components/elements/Button";
 import Checkbox from "@/components/elements/Checkbox";
-import Dropdown from "@/components/elements/Dropdown";
 import Feedback from "@/components/elements/Feedback";
-import MemberStatus from "@/components/elements/MemberStatus";
 import Pagination from "@/components/elements/Pagination";
-import SearchInput from "@/components/elements/SearchInput";
 import Table from "@/components/table/Table";
-import TableCell from "@/components/table/TableCell";
 import TableEmptyRow from "@/components/table/TableEmptyRow";
 import TableFoot from "@/components/table/TableFoot";
 import TableHead from "@/components/table/TableHead";
 import TableHeaderCell from "@/components/table/TableHeaderCell";
 import TableLoadingRow from "@/components/table/TableLoadingRow";
-import TableRow from "@/components/table/TableRow";
 import MemberBatchFailureModal from "@/components/teams/MemberBatchFailureModal";
 import InviteMemberModal from "@/components/users/InviteMemberModal";
 import MemberDeleteModal from "@/components/users/MemberDeleteModal";
 import MemberDetailDrawer from "@/components/users/MemberDetailDrawer";
-import {
-  useCancelInvitation,
-  useDeleteUsers,
-  useInviteMutation,
-  useResendInvitation,
-} from "@/hooks/mutations/useInvitationMutations";
+import UserRow from "@/components/users/UserRow";
+import UsersToolbar from "@/components/users/UsersToolbar";
+import { useCancelInvitation } from "@/hooks/mutations/useInvitationMutations";
 import {
   useAddUserMembership,
   useBulkUserRoleChange,
@@ -34,20 +26,15 @@ import {
 import { useTeamsTreeQuery } from "@/hooks/queries/useTeamsTreeQuery";
 import { useUserQuery } from "@/hooks/queries/useUserQuery";
 import { useUsersQuery } from "@/hooks/queries/useUsersQuery";
-import {
-  toBatchFailureRows,
-  useBatchFailureModal,
-} from "@/hooks/useBatchFailureModal";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { usePageScopedSelection } from "@/hooks/usePageScopedSelection";
 import {
   useServerPagination,
   useSyncPaginationTotal,
 } from "@/hooks/useServerPagination";
-import { parseErrorCode } from "@/api/parseError";
-import { useNoticeStore } from "@/state/store/noticeStore";
+import { useUserBatchActions } from "@/hooks/useUserBatchActions";
 import { buildTeamOptions } from "@/utils/buildTeamOptions";
-import { ERROR_CODES, SESSION_STATUS } from "@/constants/apiConstants";
+import { SESSION_STATUS } from "@/constants/apiConstants";
 import {
   ARIA_LABELS,
   BTN_TEXT,
@@ -56,24 +43,11 @@ import {
   PAGE_TITLES,
   TABLE_HEADERS,
 } from "@/constants/commonConstants";
-import { NOTICE_TEXT } from "@/constants/noticeConstants";
-import { CHIP_STATUS } from "@/constants/userConstants";
 import type { TDropdownOption } from "@/types/commonTypes";
 import type { TTeamMemberRole, TTeamTree } from "@/types/teamTypes";
-import type {
-  TInvitePayload,
-  TInviteResult,
-  TUserListItem,
-} from "@/types/userTypes";
 
 const styles = {
   page: "flex flex-col gap-3.5 p-4",
-  /* Wide enough for typical names at the 40% column; anything longer
-     (up to the 50-char username cap) truncates with an ellipsis and
-     keeps the full name in the title tooltip. */
-  usernameCell: "max-w-[400px] truncate",
-  overflowChip:
-    "border-border text-faint ml-1.5 rounded-full border px-2 text-xs",
 };
 
 /* Filter/sort option sets (SC-11 no.2–3). "all" stands in for 전체. The list
@@ -86,9 +60,7 @@ const STATUS_OPTIONS: TDropdownOption[] = [
 
 /* Depth indent stripped — the 150px filter trigger can't fit deep-tree
    indentation (it forces horizontal scrolling in the menu); teams list
-   flush left in tree order and long names truncate with an ellipsis.
-   Computed in-component (buildTeamOptions depends on the real teams
-   query result — no static dummy list anymore). */
+   flush left in tree order and long names truncate with an ellipsis. */
 const buildGroupOptions = (teams: TTeamTree): TDropdownOption[] => [
   { value: "all", label: "전체" },
   ...buildTeamOptions(teams).map(({ value, label }) => ({ value, label })),
@@ -99,23 +71,15 @@ const SORT_OPTIONS: TDropdownOption[] = [
   { value: "username", label: TABLE_HEADERS.memberName },
 ];
 
-/** First membership as "team · role"; the rest collapse into "+n". */
-const membershipSummary = (user: TUserListItem) => {
-  const [first, ...rest] = user.memberships;
-  return first
-    ? { summary: `${first.teamName} · ${first.role}`, extra: rest.length }
-    : { summary: "—", extra: 0 };
-};
-
 /**
  * UsersPage is the user management screen (SC-11): cross-team user
  * list with search/filters/sort, bulk actions, and pagination, plus
  * the invite modal (SC-12), member detail drawer (SC-13), and delete
  * confirm (SC-15). The list is driven by GET /users (useUsersQuery) —
  * search/status/team/sort/page all become query params, and the
- * server returns the already filtered/sorted/paged rows. The drawer's
- * detail (GET /users/{id}), role/membership batch, session deactivate,
- * invite/resend/cancel, and delete mutations are all wired to the API.
+ * server returns the already filtered/sorted/paged rows. Bulk flows
+ * (invite/resend/delete) live in useUserBatchActions; the drawer's
+ * membership machine lives in useMembershipDrafts.
  */
 const UsersPage = () => {
   const [search, setSearch] = useState("");
@@ -129,9 +93,6 @@ const UsersPage = () => {
     usePageScopedSelection();
   const { page, totalPages, setPage, resetPage, syncTotal } =
     useServerPagination();
-  const { batchFailures, showBatchFailures, closeBatchFailures } =
-    useBatchFailureModal();
-  const showNotice = useNoticeStore((state) => state.showNotice);
 
   const { data: teams } = useTeamsTreeQuery();
   const detailQuery = useUserQuery(drawerUserId ?? "");
@@ -139,11 +100,24 @@ const UsersPage = () => {
   const removeMemberships = useRemoveUserMemberships(drawerUserId ?? "");
   const addMembership = useAddUserMembership(drawerUserId ?? "");
   const deactivateSession = useDeactivateUserSession(drawerUserId ?? "");
-  const invite = useInviteMutation();
-  const resend = useResendInvitation();
   const cancel = useCancelInvitation();
-  const deleteUsersMutation = useDeleteUsers();
   const groupOptions = buildGroupOptions(teams ?? []);
+
+  const {
+    inviteMember,
+    resendCode,
+    resendCodes,
+    deleteMembers,
+    batchFailures,
+    closeBatchFailures,
+  } = useUserBatchActions({
+    setSelectedIds,
+    onDeleted: (deletedIds) => {
+      if (drawerUserId && deletedIds.includes(drawerUserId)) {
+        setDrawerUserId(null);
+      }
+    },
+  });
 
   const debouncedSearch = useDebouncedValue(search, 300);
   const usersQuery = useUsersQuery({
@@ -190,98 +164,6 @@ const UsersPage = () => {
   /* Select-all is page-scoped. */
   const allSelected =
     users.length > 0 && users.every((u) => selectedIds.has(u.userId));
-
-  /** POST /invitations — server judges duplicates and target states; only
-      the staged team/role sets are sent (buildInvitePreview's sub-team
-      expansion is display-only, the server performs the real expansion). */
-  const inviteMember = async (
-    payload: TInvitePayload,
-  ): Promise<TInviteResult> => {
-    try {
-      await invite.mutateAsync({
-        account: payload.email,
-        username: payload.username,
-        memberships: payload.sets.map((set) => ({
-          teamId: set.teamId,
-          role: set.role as TTeamMemberRole,
-        })),
-      });
-      return "success";
-    } catch (err) {
-      if (err instanceof Response) {
-        const code = await parseErrorCode(err);
-        return code === ERROR_CODES.ALREADY_TEAM_MEMBER
-          ? "duplicate-account"
-          : "error";
-      }
-      return "error";
-    }
-  };
-
-  /** POST /invitations/resend (per target) — status never changes (D10).
-      Selection stays intact on partial failure so the user can retry. */
-  const resendCodes = async (targets: TUserListItem[]) => {
-    const results = await Promise.allSettled(
-      targets.map((u) => resend.mutateAsync(u.userId)),
-    );
-    const failed = targets.filter((_, i) => results[i].status === "rejected");
-    if (failed.length === 0) {
-      showNotice(
-        NOTICE_TEXT.resendInvitation.title,
-        NOTICE_TEXT.resendInvitation.success,
-        "info",
-      );
-      return;
-    }
-    showBatchFailures(
-      failed.map((u) => ({
-        account: u.account,
-        reason: NOTICE_TEXT.resendInvitation.failedReason,
-      })),
-    );
-  };
-
-  /** DELETE /users (batch) — memberships, session token, and unused
-      invite codes go together (D13). Full success clears the targets
-      from selection and closes the drawer if it pointed at one of
-      them; partial failure shows the failure modal (account + reason)
-      and leaves the still-failed ids selected for retry. Throws only
-      on full failure, so MemberDeleteModal/the drawer's onDeleteMember
-      contract (resolve unless every target failed) is unaffected. */
-  const deleteMembers = async (targets: TUserListItem[]) => {
-    const userIds = targets.map((u) => u.userId);
-    const result = await deleteUsersMutation.mutateAsync(userIds);
-    const failedIds = new Set(result.failed.map((f) => f.id));
-    const succeededIds = userIds.filter((id) => !failedIds.has(id));
-
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      succeededIds.forEach((id) => next.delete(id));
-      return next;
-    });
-    if (drawerUserId && succeededIds.includes(drawerUserId)) {
-      setDrawerUserId(null);
-    }
-
-    if (result.failed.length === 0) {
-      showNotice(
-        NOTICE_TEXT.deleteMember.title,
-        NOTICE_TEXT.deleteMember.success,
-        "info",
-      );
-      return;
-    }
-    if (succeededIds.length === 0) {
-      throw new Error("delete failed for every target");
-    }
-    showBatchFailures(
-      toBatchFailureRows(
-        result.failed,
-        (id) => targets.find((u) => u.userId === id)?.account ?? id,
-        (code) => code,
-      ),
-    );
-  };
 
   /* ── SC-11 state C — 조회 실패 ──────────────────────────────────── */
   if (usersQuery.isError) {
@@ -344,82 +226,23 @@ const UsersPage = () => {
         pagination never shifts the layout. */
         scrollClassName="min-h-[526px]"
         toolbar={
-          <div className="px-4 py-4">
-            <div className="flex items-end justify-between gap-4">
-              <div className="flex flex-col flex-wrap gap-5">
-                <SearchInput
-                  value={search}
-                  onChange={withPageReset(setSearch)}
-                  placeholder="이름 검색"
-                  maxLength={100}
-                  className="w-50"
-                />
-                {/* filter/order dropdown */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-md text-faint">정렬 기준</span>
-                    <Dropdown
-                      options={SORT_OPTIONS}
-                      value={sort}
-                      onChange={withPageReset(setSort)}
-                      size="sm"
-                      ariaLabel={ARIA_LABELS.sort}
-                      className="w-36"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-md text-faint">멤버 상태</span>
-                    <Dropdown
-                      options={STATUS_OPTIONS}
-                      value={statusFilter}
-                      onChange={withPageReset(setStatusFilter)}
-                      size="sm"
-                      ariaLabel="status 필터"
-                      className="w-32"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-md text-faint">팀</span>
-                    <Dropdown
-                      options={groupOptions}
-                      value={groupFilter}
-                      onChange={withPageReset(setGroupFilter)}
-                      size="sm"
-                      ariaLabel="group 필터"
-                      className="w-40"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions — second row, left-aligned (SC-11 no.4–6) */}
-              <div className="flex items-center gap-2 self-end">
-                <Button
-                  btnText={BTN_TEXT.resendInvitationCode}
-                  btnSize="sm"
-                  btnColor="mintFilled"
-                  className="w-fit"
-                  disabled={selectedIds.size === 0}
-                  handleClick={() => resendCodes(selectedUsers)}
-                />
-                <Button
-                  btnText={BTN_TEXT.delete}
-                  btnSize="sm"
-                  btnColor="redOutline"
-                  className="w-fit"
-                  disabled={selectedIds.size === 0}
-                  handleClick={() => setBulkDeleteOpen(true)}
-                />
-                <Button
-                  btnText={BTN_TEXT.inviteMember}
-                  btnSize="sm"
-                  btnColor="mintOutline"
-                  className="w-fit"
-                  handleClick={() => setInviteOpen(true)}
-                />
-              </div>
-            </div>
-          </div>
+          <UsersToolbar
+            search={search}
+            sort={sort}
+            statusFilter={statusFilter}
+            groupFilter={groupFilter}
+            sortOptions={SORT_OPTIONS}
+            statusOptions={STATUS_OPTIONS}
+            groupOptions={groupOptions}
+            onSearchChange={withPageReset(setSearch)}
+            onSortChange={withPageReset(setSort)}
+            onStatusChange={withPageReset(setStatusFilter)}
+            onGroupChange={withPageReset(setGroupFilter)}
+            selectedCount={selectedIds.size}
+            onResend={() => resendCodes(selectedUsers)}
+            onOpenBulkDelete={() => setBulkDeleteOpen(true)}
+            onOpenInvite={() => setInviteOpen(true)}
+          />
         }
         foot={
           <TableFoot
@@ -464,46 +287,15 @@ const UsersPage = () => {
           {!usersQuery.isPending && users.length === 0 && (
             <TableEmptyRow colSpan={4}>검색 결과가 없습니다.</TableEmptyRow>
           )}
-          {users.map((user) => {
-            const { summary, extra } = membershipSummary(user);
-            return (
-              <TableRow
-                key={user.userId}
-                selected={selectedIds.has(user.userId)}
-                onClick={() => setDrawerUserId(user.userId)}
-              >
-                {/* Checkbox clicks must not open the drawer (SC-11 no.8) */}
-                <TableCell className="w-8 pr-1">
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      checked={selectedIds.has(user.userId)}
-                      onChange={(checked) => toggleOne(user.userId, checked)}
-                      ariaLabel={`${user.account} 선택`}
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className={styles.usernameCell}>
-                  <span title={user.username}>{user.username}</span>
-                </TableCell>
-                <TableCell>
-                  <MemberStatus status={CHIP_STATUS[user.sessionStatus]} />
-                </TableCell>
-                <TableCell>
-                  {summary}
-                  {extra > 0 && (
-                    <span
-                      className={styles.overflowChip}
-                      title={user.memberships
-                        .map((m) => `${m.teamName} · ${m.role}`)
-                        .join(", ")}
-                    >
-                      +{extra}
-                    </span>
-                  )}
-                </TableCell>
-              </TableRow>
-            );
-          })}
+          {users.map((user) => (
+            <UserRow
+              key={user.userId}
+              user={user}
+              selected={selectedIds.has(user.userId)}
+              onSelect={(checked) => toggleOne(user.userId, checked)}
+              onOpen={() => setDrawerUserId(user.userId)}
+            />
+          ))}
         </tbody>
       </Table>
 
@@ -541,7 +333,7 @@ const UsersPage = () => {
             await deactivateSession.mutateAsync();
           }}
           onResendCode={async () => {
-            await resend.mutateAsync(drawerUser.userId);
+            await resendCode(drawerUser.userId);
           }}
           onCancelInvitation={async () => {
             await cancel.mutateAsync(drawerUser.userId);
