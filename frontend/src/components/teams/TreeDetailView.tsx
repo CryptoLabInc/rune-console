@@ -1,24 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 
 import Button from "@/components/elements/Button";
-import Checkbox from "@/components/elements/Checkbox";
-import Dropdown from "@/components/elements/Dropdown";
-import MemberStatus from "@/components/elements/MemberStatus";
-import Pagination from "@/components/elements/Pagination";
-import Table from "@/components/table/Table";
-import TableCell from "@/components/table/TableCell";
-import TableEmptyRow from "@/components/table/TableEmptyRow";
-import TableErrorRow from "@/components/table/TableErrorRow";
-import TableFoot from "@/components/table/TableFoot";
-import TableHead from "@/components/table/TableHead";
-import TableHeaderCell from "@/components/table/TableHeaderCell";
-import TableLoadingRow from "@/components/table/TableLoadingRow";
-import TableRow from "@/components/table/TableRow";
 import AddMemberModal from "@/components/teams/AddMemberModal";
 import CreateTeamModal from "@/components/teams/CreateTeamModal";
 import DeleteTeamModal from "@/components/teams/DeleteTeamModal";
 import MemberBatchFailureModal from "@/components/teams/MemberBatchFailureModal";
 import RenameTeamModal from "@/components/teams/RenameTeamModal";
+import TeamCard from "@/components/teams/TeamCard";
+import TeamMembersTable from "@/components/teams/TeamMembersTable";
+import TeamMembersToolbar from "@/components/teams/TeamMembersToolbar";
 import TeamTree from "@/components/tree/TeamTree";
 import MembershipRemoveModal from "@/components/users/MembershipRemoveModal";
 import RoleChangeConfirmModal from "@/components/users/RoleChangeConfirmModal";
@@ -27,11 +17,6 @@ import {
   useBulkRoleChangeMutation,
   useRemoveTeamMembersMutation,
 } from "@/hooks/mutations/useTeamMemberMutations";
-import {
-  useCreateTeamMutation,
-  useDeleteTeamMutation,
-  useRenameTeamMutation,
-} from "@/hooks/mutations/useTeamMutations";
 import { useTeamMembersQuery } from "@/hooks/queries/useTeamMembersQuery";
 import { useTeamQuery } from "@/hooks/queries/useTeamQuery";
 import {
@@ -43,12 +28,17 @@ import {
   useServerPagination,
   useSyncPaginationTotal,
 } from "@/hooks/useServerPagination";
+import { useStagedRoleEdits } from "@/hooks/useStagedRoleEdits";
+import { useTeamCrud } from "@/hooks/useTeamCrud";
 import { parseErrorCode } from "@/api/parseError";
 import { useNoticeStore } from "@/state/store/noticeStore";
-import { formatDate } from "@/utils/formatDate";
+import {
+  ancestorIds,
+  buildTeamNodes,
+  findTeamNode,
+} from "@/utils/teamHierarchy";
 import { TEAM_MEMBER_ROLE } from "@/constants/apiConstants";
 import {
-  ARIA_LABELS,
   BTN_TEXT,
   DEFAULT_PAGE_SIZE,
   TABLE_HEADERS,
@@ -56,16 +46,9 @@ import {
 import {
   ADD_MEMBER_REASON,
   BATCH_REASON_FALLBACK,
-  TEAM_REASON,
 } from "@/constants/errorConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
-import { ROLE_OPTIONS } from "@/constants/teamConstants";
-import { CHIP_STATUS } from "@/constants/userConstants";
-import type {
-  TTeamMemberRole,
-  TTeamTree,
-  TTeamViewNode,
-} from "@/types/teamTypes";
+import type { TTeamMemberRole, TTeamTree } from "@/types/teamTypes";
 import type { TRoleChange } from "@/types/userTypes";
 
 const styles = {
@@ -74,18 +57,6 @@ const styles = {
   side: "border-border flex w-50 flex-none flex-col gap-2.5 border-r p-3",
   /* Right detail area */
   main: "flex min-w-0 flex-1 flex-col gap-5 p-4",
-  teamCard: "border-border bg-surface rounded-lg border px-4 py-3",
-  teamCardRow: "flex items-center gap-2",
-  teamName: "text-lg flex-1 font-semibold",
-  teamMeta: "text-sm text-muted-foreground mt-1.5",
-  membersRow: "flex items-center gap-2",
-  membersTitle: "text-md flex-1 font-semibold",
-  /* The detail panel is narrower than the users page — typical names
-     fit the 36% column; longer ones truncate with an ellipsis and
-     keep the full name in the title tooltip. */
-  usernameCell: "max-w-[280px] truncate cursor-default",
-  timeCell: "text-faint font-mono text-xs whitespace-nowrap",
-  pendingActions: "flex flex-wrap items-center gap-2",
 };
 
 type TActiveModal =
@@ -98,42 +69,12 @@ type TActiveModal =
   | null;
 
 /**
- * GET /teams/tree returns flat nodes — the client builds the recursive
- * TTeamViewNode shape the TeamTree component consumes (API design §3).
- * Single pass over a children index (not a filter per parent), so the
- * build stays linear in team count.
- */
-const buildTeamNodes = (teams: TTeamTree): TTeamViewNode[] => {
-  const childrenOf = new Map<string | null, TTeamTree>();
-  for (const team of teams) {
-    const siblings = childrenOf.get(team.parentId);
-    if (siblings) siblings.push(team);
-    else childrenOf.set(team.parentId, [team]);
-  }
-  const build = (parentId: string | null): TTeamViewNode[] =>
-    (childrenOf.get(parentId) ?? []).map((team) => ({
-      id: team.id,
-      name: team.name,
-      members: team.memberCount,
-      children: team.childCount > 0 ? build(team.id) : undefined,
-    }));
-  return build(null);
-};
-
-const findTeamNode = (
-  nodes: TTeamViewNode[],
-  id: string,
-): TTeamViewNode | undefined =>
-  nodes.reduce<TTeamViewNode | undefined>(
-    (found, node) =>
-      found ?? (node.id === id ? node : findTeamNode(node.children ?? [], id)),
-    undefined,
-  );
-
-/**
  * TreeDetailView is the SC-06 트리·상세 view: team tree panel (left) +
  * selected-team card and member table (right). Rendered by TeamsPage
- * when the view toggle is on 트리·상세.
+ * when the view toggle is on 트리·상세. The view composes the shared
+ * hooks (selection, pagination, staged role edits, team CRUD, batch
+ * failures) and hands rendering to TeamCard/TeamMembersToolbar/
+ * TeamMembersTable.
  */
 interface TreeDetailViewProps {
   /** Flat GET /teams/tree nodes — owned by TeamsPage. Always non-empty
@@ -148,21 +89,6 @@ interface TreeDetailViewProps {
   onSelectTeam: (teamId: string) => void;
 }
 
-/** Ancestor ids of a team — expanded so a selection handed off from
-    the org chart is actually visible in the tree. */
-const ancestorIds = (
-  flatById: Map<string, TTeamTree[number]>,
-  teamId: string,
-): string[] => {
-  const ids: string[] = [];
-  let parentId = flatById.get(teamId)?.parentId;
-  while (parentId) {
-    ids.push(parentId);
-    parentId = flatById.get(parentId)?.parentId;
-  }
-  return ids;
-};
-
 const TreeDetailView = ({
   teams,
   teamSearch,
@@ -176,22 +102,24 @@ const TreeDetailView = ({
   const teamNodes = useMemo(() => buildTeamNodes(teams), [teams]);
   /* Fallback selection — the first top-level team (SC-06 entry rule). */
   const defaultTeam = teamNodes[0];
-
   const selectedTeam = findTeamNode(teamNodes, selectedTeamId) ?? defaultTeam;
+
   const { selectedIds, toggleOne, toggleAll, clearSelection } =
     usePageScopedSelection();
   const { page, totalPages, setPage, resetPage, syncTotal } =
     useServerPagination();
-
-  /* Role edits are staged (SC-06): dropdown picks collect here and only
-     apply on [변경사항 업데이트]. savedRoles is the committed baseline
-     (stands in for the PUT /teams/{id}/members batch until wired). */
-  const [pendingRoles, setPendingRoles] = useState<
-    Map<string, TTeamMemberRole>
-  >(new Map());
-  const [savedRoles, setSavedRoles] = useState<Map<string, TTeamMemberRole>>(
-    new Map(),
-  );
+  const {
+    pendingRoles,
+    baseRole,
+    stageRole,
+    resetStaged,
+    resetAll,
+    applyAll,
+    reconcileBatch,
+  } = useStagedRoleEdits();
+  const { batchFailures, showBatchFailures, closeBatchFailures } =
+    useBatchFailureModal();
+  const showNotice = useNoticeStore((state) => state.showNotice);
 
   /* Switching teams must not leak the prior team's member-table state:
      without this, `page` can point past the new team's last page (no
@@ -206,8 +134,7 @@ const TreeDetailView = ({
   useEffect(() => {
     resetPage();
     clearSelection();
-    setPendingRoles(new Map());
-    setSavedRoles(new Map());
+    resetAll();
   }, [selectedTeam.id]);
 
   const { data: detail } = useTeamQuery(selectedTeam.id);
@@ -223,10 +150,9 @@ const TreeDetailView = ({
   const addMember = useAddTeamMemberMutation(selectedTeam.id);
   const bulkRole = useBulkRoleChangeMutation(selectedTeam.id);
   const removeMembers = useRemoveTeamMembersMutation(selectedTeam.id);
-  const createTeam = useCreateTeamMutation();
-  const renameTeam = useRenameTeamMutation(selectedTeam.id);
-  const deleteTeam = useDeleteTeamMutation(selectedTeam.id);
 
+  /* Selected-team card meta — detail query first, flat tree row as the
+     immediate fallback while the detail loads. */
   const flatTeam = flatById.get(selectedTeam.id);
   const parentName = detail?.parentId
     ? (flatById.get(detail.parentId)?.name ?? "없음")
@@ -237,138 +163,38 @@ const TreeDetailView = ({
   const childrenLabel = childCount ? `${childCount}개` : "없음";
   const memberCount = detail?.memberCount ?? selectedTeam.members;
 
-  /* Select-all is page-scoped; selections persist across page moves. */
-  const allSelected =
-    members.length > 0 && members.every((m) => selectedIds.has(m.userId));
-
-  const showNotice = useNoticeStore((state) => state.showNotice);
-
-  const baseRole = (userId: string, fallback: TTeamMemberRole) =>
-    savedRoles.get(userId) ?? fallback;
-
-  const handleRoleChange = (
-    userId: string,
-    fallback: TTeamMemberRole,
-    nextRole: string,
-  ) =>
-    setPendingRoles((prev) => {
-      const next = new Map(prev);
-      if (nextRole === baseRole(userId, fallback)) next.delete(userId);
-      else next.set(userId, nextRole as TTeamMemberRole);
-      return next;
-    });
-
-  const applyRoleChanges = () => {
-    setSavedRoles((prev) => new Map([...prev, ...pendingRoles]));
-    setPendingRoles(new Map());
-  };
-
   /* Modals (SC-07~10 + SC-06 state E). All confirm handlers below call
      their real mutations. */
   const [activeModal, setActiveModal] = useState<TActiveModal>(null);
   const closeModal = () => setActiveModal(null);
 
-  /* Team CRUD (create/rename/delete) inline error — reset whenever a
-     modal opens or closes so a stale error from a prior attempt never
-     leaks into a fresh one. */
-  const [teamError, setTeamError] = useState<string | null>(null);
+  const {
+    teamError,
+    clearTeamError,
+    handleCreate,
+    handleRename,
+    handleDelete,
+  } = useTeamCrud({
+    teamId: selectedTeam.id,
+    onDone: closeModal,
+    onDeleted: () =>
+      onSelectTeam(
+        teams.find((t) => t.parentId === null && t.id !== selectedTeam.id)
+          ?.id ?? "",
+      ),
+  });
+  /* Team CRUD inline error — reset whenever a modal opens or closes so a
+     stale error from a prior attempt never leaks into a fresh one. */
   const openTeamModal = (modal: TActiveModal) => {
-    setTeamError(null);
+    clearTeamError();
     setActiveModal(modal);
   };
   const closeTeamModal = () => {
-    setTeamError(null);
+    clearTeamError();
     closeModal();
   };
-  const { batchFailures, showBatchFailures, closeBatchFailures } =
-    useBatchFailureModal();
-  const accountOf = (userId: string) =>
-    members.find((m) => m.userId === userId)?.account ?? userId;
 
   const [addError, setAddError] = useState<string | null>(null);
-
-  /* Staged picks as confirm-modal rows (TRoleChange: label = account). */
-  const roleChanges: TRoleChange[] = [...pendingRoles.entries()].map(
-    ([userId, to]) => {
-      const member = members.find((m) => m.userId === userId);
-      return {
-        label: member?.account ?? userId,
-        from: baseRole(userId, member?.role ?? TEAM_MEMBER_ROLE.read),
-        to,
-      };
-    },
-  );
-
-  const handleCreate = (name: string, parentId: string | null) => {
-    setTeamError(null);
-    createTeam.mutate(
-      { name, parentId },
-      {
-        onSuccess: () => {
-          closeModal();
-          showNotice(
-            NOTICE_TEXT.createTeam.title,
-            NOTICE_TEXT.createTeam.success,
-            "success",
-          );
-        },
-        onError: async (res) => {
-          const code = await parseErrorCode(res);
-          setTeamError(TEAM_REASON[code] ?? "팀 생성에 실패했습니다.");
-        },
-      },
-    );
-  };
-  const handleRename = (name: string) => {
-    setTeamError(null);
-    renameTeam.mutate(
-      { name },
-      {
-        onSuccess: () => {
-          closeModal();
-          showNotice(
-            NOTICE_TEXT.renameTeam.title,
-            NOTICE_TEXT.renameTeam.success,
-            "success",
-          );
-        },
-        onError: async (res) => {
-          const code = await parseErrorCode(res);
-          setTeamError(TEAM_REASON[code] ?? "이름 변경에 실패했습니다.");
-        },
-      },
-    );
-  };
-  const handleDelete = (
-    action: "purge" | "transfer",
-    targetTeamId?: string,
-  ) => {
-    setTeamError(null);
-    deleteTeam.mutate(
-      { memoryAction: action, targetTeamId },
-      {
-        onSuccess: () => {
-          closeModal();
-          showNotice(
-            NOTICE_TEXT.deleteTeam.title,
-            NOTICE_TEXT.deleteTeam.success,
-            "success",
-            () => {
-              onSelectTeam(
-                teams.find(
-                  (t) => t.parentId === null && t.id !== selectedTeam.id,
-                )?.id ?? "",
-              );
-            },
-          );
-        },
-        onError: async (res) => {
-          const code = await parseErrorCode(res);
-          setTeamError(TEAM_REASON[code] ?? "팀 삭제에 실패했습니다.");
-        },
-      },
-    );
-  };
   const handleInvite = (account: string, role: string, username: string) => {
     setAddError(null);
     addMember.mutate(
@@ -389,6 +215,22 @@ const TreeDetailView = ({
       },
     );
   };
+
+  const accountOf = (userId: string) =>
+    members.find((m) => m.userId === userId)?.account ?? userId;
+
+  /* Staged picks as confirm-modal rows (TRoleChange: label = account). */
+  const roleChanges: TRoleChange[] = [...pendingRoles.entries()].map(
+    ([userId, to]) => {
+      const member = members.find((m) => m.userId === userId);
+      return {
+        label: member?.account ?? userId,
+        from: baseRole(userId, member?.role ?? TEAM_MEMBER_ROLE.read),
+        to,
+      };
+    },
+  );
+
   /* The confirm modal owns the E-1/E-2 result view: a resolved promise
      shows the in-modal success message, a rejected one the failure
      message ([닫기] alone remains). Partial failures additionally open
@@ -400,22 +242,7 @@ const TreeDetailView = ({
     }));
     const result = await bulkRole.mutateAsync({ updates });
     if (result.failed.length > 0) {
-      /* Only clear staging for what actually succeeded — keep the
-         failed entries pending so the user can retry them. */
-      const failedIds = new Set(result.failed.map((f) => f.id));
-      setSavedRoles(
-        (prev) =>
-          new Map([
-            ...prev,
-            ...[...pendingRoles.entries()].filter(
-              ([userId]) => !failedIds.has(userId),
-            ),
-          ]),
-      );
-      setPendingRoles(
-        (prev) =>
-          new Map([...prev].filter(([userId]) => failedIds.has(userId))),
-      );
+      reconcileBatch(new Set(result.failed.map((f) => f.id)));
       showBatchFailures(
         toBatchFailureRows(
           result.failed,
@@ -424,9 +251,10 @@ const TreeDetailView = ({
         ),
       );
     } else {
-      applyRoleChanges();
+      applyAll();
     }
   };
+
   /* The remove modal closes itself on resolve and swaps to its failure
      view on reject — only the full-success notice and the partial-failure
      modal are driven from here. */
@@ -483,171 +311,51 @@ const TreeDetailView = ({
 
       {/* Detail area — selected team card + members section (SC-06 no.6–13) */}
       <div className={styles.main}>
-        <div className={styles.teamCard}>
-          <div className={styles.teamCardRow}>
-            <h3 className={styles.teamName}>
-              {detail?.name ?? selectedTeam.name}
-            </h3>
-            <Button
-              btnText={BTN_TEXT.rename}
-              btnSize="sm"
-              btnColor="grayOutline"
-              className="w-fit"
-              handleClick={() => openTeamModal("rename")}
-            />
-            <Button
-              btnText={BTN_TEXT.deleteTeam}
-              btnSize="sm"
-              btnColor="redFilled"
-              className="w-fit"
-              handleClick={() => openTeamModal("delete")}
-            />
-          </div>
-          <p className={styles.teamMeta}>
-            상위 팀: {parentName} | 하위 팀: {childrenLabel} | 멤버:{" "}
-            {memberCount}명 | 생성일: {formatDate(detail?.createdAt)}
-          </p>
-        </div>
+        <TeamCard
+          name={detail?.name ?? selectedTeam.name}
+          parentName={parentName}
+          childrenLabel={childrenLabel}
+          memberCount={memberCount}
+          createdAt={detail?.createdAt}
+          onRename={() => openTeamModal("rename")}
+          onDelete={() => openTeamModal("delete")}
+        />
 
-        <div className={styles.membersRow}>
-          <h3 className={styles.membersTitle}>멤버 ({total})</h3>{" "}
-          <div className={styles.pendingActions}>
-            {/* Drops every staged (not yet applied) dropdown pick back to
-                its saved role — the committed savedRoles baseline stays. */}
-            <Button
-              btnText={BTN_TEXT.resetChanges}
-              btnSize="sm"
-              btnColor="grayOutline"
-              className="w-fit"
-              disabled={pendingRoles.size === 0}
-              handleClick={() => setPendingRoles(new Map())}
-            />
-            <Button
-              btnText={BTN_TEXT.updateChanges}
-              btnSize="sm"
-              btnColor="mintOutline"
-              className="w-fit"
-              disabled={pendingRoles.size === 0}
-              handleClick={() => setActiveModal("roleConfirm")}
-            />
-            <Button
-              btnText={BTN_TEXT.remove}
-              btnSize="sm"
-              btnColor="redFilled"
-              className="w-fit"
-              disabled={selectedIds.size === 0}
-              handleClick={() => setActiveModal("removeMembers")}
-            />
-            <Button
-              btnText={BTN_TEXT.addMember}
-              btnSize="sm"
-              btnColor="mintFilled"
-              className="w-fit"
-              handleClick={() => setActiveModal("addMember")}
-            />
-          </div>
-        </div>
+        <TeamMembersToolbar
+          total={total}
+          pendingCount={pendingRoles.size}
+          selectedCount={selectedIds.size}
+          onResetChanges={resetStaged}
+          onUpdateChanges={() => setActiveModal("roleConfirm")}
+          onRemove={() => setActiveModal("removeMembers")}
+          onAddMember={() => setActiveModal("addMember")}
+        />
 
-        <Table
-          fluid
-          scrollClassName="min-h-[526px]"
-          foot={
-            <TableFoot
-              info={`총 ${total}명 · ${DEFAULT_PAGE_SIZE}명/페이지`}
-              className="flex-row items-center"
-            >
-              <div className="flex flex-col items-end gap-3">
-                <Pagination
-                  page={page}
-                  totalPages={totalPages}
-                  onChange={setPage}
-                />
-              </div>
-            </TableFoot>
+        <TeamMembersTable
+          members={members}
+          isPending={membersQuery.isPending}
+          isError={membersQuery.isError}
+          total={total}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          selectedIds={selectedIds}
+          onToggleOne={toggleOne}
+          onToggleAll={(checked) =>
+            toggleAll(
+              members.map((m) => m.userId),
+              checked,
+            )
           }
-        >
-          <TableHead>
-            <TableHeaderCell className="w-8 pr-1">
-              <Checkbox
-                checked={allSelected}
-                onChange={(checked) =>
-                  toggleAll(
-                    members.map((m) => m.userId),
-                    checked,
-                  )
-                }
-                ariaLabel={ARIA_LABELS.selectAll}
-              />
-            </TableHeaderCell>
-            {/* Fixed column widths — auto layout would resize per
-                page's content and shift the headers while paginating. */}
-            <TableHeaderCell className="w-[36%]">
-              {TABLE_HEADERS.memberName}
-            </TableHeaderCell>
-            <TableHeaderCell className="w-[18%]">
-              {TABLE_HEADERS.memberStatus}
-            </TableHeaderCell>
-            <TableHeaderCell className="w-[28%]">
-              {TABLE_HEADERS.roleAlt}
-            </TableHeaderCell>
-            <TableHeaderCell className="w-[18%]">
-              {TABLE_HEADERS.joinedAt}
-            </TableHeaderCell>
-          </TableHead>
-          <tbody>
-            {membersQuery.isPending ? (
-              <TableLoadingRow colSpan={5} />
-            ) : membersQuery.isError ? (
-              <TableErrorRow
-                message="멤버 목록을 불러올 수 없습니다."
-                colSpan={5}
-              />
-            ) : total === 0 ? (
-              <TableEmptyRow colSpan={5}>멤버가 없습니다.</TableEmptyRow>
-            ) : (
-              members.map((member) => (
-                <TableRow
-                  key={member.userId}
-                  selected={selectedIds.has(member.userId)}
-                  changed={pendingRoles.has(member.userId)}
-                >
-                  <TableCell className="w-8 pr-1">
-                    <Checkbox
-                      checked={selectedIds.has(member.userId)}
-                      onChange={(checked) => toggleOne(member.userId, checked)}
-                      ariaLabel={`${member.account} 선택`}
-                    />
-                  </TableCell>
-                  <TableCell className={styles.usernameCell}>
-                    <span title={member.username}>{member.username}</span>
-                  </TableCell>
-                  <TableCell>
-                    <MemberStatus status={CHIP_STATUS[member.sessionStatus]} />
-                  </TableCell>
-                  <TableCell>
-                    <Dropdown
-                      options={ROLE_OPTIONS}
-                      value={
-                        pendingRoles.get(member.userId) ??
-                        baseRole(member.userId, member.role)
-                      }
-                      onChange={(next) =>
-                        handleRoleChange(member.userId, member.role, next)
-                      }
-                      size="sm"
-                      changed={pendingRoles.has(member.userId)}
-                      ariaLabel={`${member.account} role`}
-                      className="w-24"
-                    />
-                  </TableCell>
-                  <TableCell className={styles.timeCell}>
-                    {formatDate(member.joinedAt)}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </tbody>
-        </Table>
+          isRoleStaged={(userId) => pendingRoles.has(userId)}
+          roleOf={(member) =>
+            pendingRoles.get(member.userId) ??
+            baseRole(member.userId, member.role)
+          }
+          onRoleChange={(member, next) =>
+            stageRole(member.userId, member.role, next)
+          }
+        />
       </div>
 
       {/* Modals — mounted on demand so each opens with fresh state */}

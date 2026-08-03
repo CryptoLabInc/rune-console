@@ -7,18 +7,14 @@ import SearchInput from "@/components/elements/SearchInput";
 import CreateTeamModal from "@/components/teams/CreateTeamModal";
 import OrgChart from "@/components/teams/OrgChart";
 import TreeDetailView from "@/components/teams/TreeDetailView";
-import { useCreateTeamMutation } from "@/hooks/mutations/useTeamMutations";
 import { useTeamsTreeQuery } from "@/hooks/queries/useTeamsTreeQuery";
-import { parseErrorCode } from "@/api/parseError";
-import { useNoticeStore } from "@/state/store/noticeStore";
+import { useTeamCrud } from "@/hooks/useTeamCrud";
 import { cn } from "@/utils/cn";
 import {
   BTN_TEXT,
   FEEDBACK_TEXT,
   PAGE_TITLES,
 } from "@/constants/commonConstants";
-import { TEAM_REASON } from "@/constants/errorConstants";
-import { NOTICE_TEXT } from "@/constants/noticeConstants";
 
 const feedbackPanel =
   "m-6 flex min-h-[340px] flex-col items-center justify-center gap-3 text-center";
@@ -57,32 +53,17 @@ const TeamsPage = () => {
 
   /* SC-06 state B (팀 0개) create action — the tree panel's [새 팀 만들기]
      is gone when there are no teams, so the empty panel owns the create
-     flow (same mutation/error mapping as TreeDetailView's SC-07). */
+     flow (same mutation/error mapping as TreeDetailView's SC-07, via the
+     shared useTeamCrud hook). */
   const [createOpen, setCreateOpen] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const createTeam = useCreateTeamMutation();
-  const showNotice = useNoticeStore((s) => s.showNotice);
-
-  const handleCreate = (name: string, parentId: string | null) => {
-    setCreateError(null);
-    createTeam.mutate(
-      { name, parentId },
-      {
-        onSuccess: () => {
-          setCreateOpen(false);
-          showNotice(
-            NOTICE_TEXT.createTeam.title,
-            NOTICE_TEXT.createTeam.success,
-            "success",
-          );
-        },
-        onError: async (res) => {
-          const code = await parseErrorCode(res);
-          setCreateError(TEAM_REASON[code] ?? "팀 생성에 실패했습니다.");
-        },
-      },
-    );
-  };
+  const {
+    teamError: createError,
+    clearTeamError,
+    handleCreate,
+  } = useTeamCrud({
+    teamId: "",
+    onDone: () => setCreateOpen(false),
+  });
 
   /* 트리·상세 is the entry view (its first top-level team auto-selected);
      조직도 is reached by the view toggle. */
@@ -201,7 +182,7 @@ const TeamsPage = () => {
               btnColor="mintFilled"
               className="w-fit"
               handleClick={() => {
-                setCreateError(null);
+                clearTeamError();
                 setCreateOpen(true);
               }}
             />
