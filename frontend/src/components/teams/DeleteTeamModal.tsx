@@ -6,7 +6,7 @@ import Input from "@/components/elements/Input";
 import Notice from "@/components/elements/Notice";
 import Radio from "@/components/elements/Radio";
 import ModalLayout from "@/components/layout/ModalLayout";
-import { buildTeamOptions } from "@/components/teams/teamOptions";
+import { buildTeamOptions } from "@/utils/buildTeamOptions";
 import { cn } from "@/utils/cn";
 import {
   BTN_TEXT,

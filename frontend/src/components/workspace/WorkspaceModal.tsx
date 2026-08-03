@@ -16,6 +16,7 @@ import {
   isTransitionalStatus,
   useWorkspaceQuery,
 } from "@/hooks/queries/useWorkspaceQuery";
+import { useWorkspaceStore } from "@/state/store/workspaceStore";
 import { WORKSPACE_STATUS } from "@/constants/apiConstants";
 import {
   BTN_TEXT,
@@ -24,7 +25,6 @@ import {
   WORKSPACE_MAX_MEMORIES,
 } from "@/constants/commonConstants";
 import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
-import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 const FAIL_COPY = {
   stop: "워크스페이스 중지에 실패했습니다. 다시 시도해 주세요.",

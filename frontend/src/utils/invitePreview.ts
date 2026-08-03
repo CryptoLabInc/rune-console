@@ -1,7 +1,4 @@
-import {
-  getTeamDescendantIds,
-  getTeamName,
-} from "@/components/teams/teamHierarchy";
+import { getTeamDescendantIds, getTeamName } from "@/utils/teamHierarchy";
 import type { TTeamTree } from "@/types/teamTypes";
 import type { TInviteSet } from "@/types/userTypes";
 

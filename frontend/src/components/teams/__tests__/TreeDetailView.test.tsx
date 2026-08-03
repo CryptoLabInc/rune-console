@@ -7,9 +7,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import TreeDetailView from "@/components/teams/TreeDetailView";
 import * as teamAPIs from "@/api/teamAPIs";
 import * as teamMemberAPIs from "@/api/teamMemberAPIs";
+import { useNoticeStore } from "@/state/store/noticeStore";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import type { TTeamMember, TTeamTree } from "@/types/teamTypes";
-import { useNoticeStore } from "@/stores/noticeStore";
 
 const jsonRes = (body: unknown) =>
   ({ ok: true, json: async () => body }) as unknown as Response;

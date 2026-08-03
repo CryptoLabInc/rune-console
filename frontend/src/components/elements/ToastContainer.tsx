@@ -1,7 +1,7 @@
 import { createPortal } from "react-dom";
 
+import { useToastStore } from "@/state/store/toastStore";
 import { cn } from "@/utils/cn";
-import { useToastStore } from "@/stores/toastStore";
 
 const styles = {
   stack: "fixed top-4 right-4 z-90 flex flex-col items-end gap-2",

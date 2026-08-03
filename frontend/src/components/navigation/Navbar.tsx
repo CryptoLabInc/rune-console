@@ -8,12 +8,12 @@ import WorkspaceModal from "@/components/workspace/WorkspaceModal";
 import { useSessionQuery } from "@/hooks/queries/useSessionQuery";
 import { useWorkspaceQuery } from "@/hooks/queries/useWorkspaceQuery";
 import { postLogout } from "@/api/authAPIs";
+import { useWorkspaceStore } from "@/state/store/workspaceStore";
 import {
   BRAND_WORDMARK,
   PATH_LIST,
   QUERY_KEYS,
 } from "@/constants/commonConstants";
-import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 /**
  * Navbar is the console top bar (SC-03). Its background and bottom border

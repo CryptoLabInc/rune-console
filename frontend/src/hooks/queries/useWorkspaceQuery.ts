@@ -4,10 +4,10 @@ import { getWorkspace } from "@/api/workspaceAPIs";
 import { WORKSPACE_STATUS } from "@/constants/apiConstants";
 import { QUERY_KEYS } from "@/constants/commonConstants";
 import type {
-  TWorkspaceStatus,
   TWorkspace,
+  TWorkspaceStatus,
   TWorkspaceWire,
-} from "@/types/commonTypes";
+} from "@/types/workspaceTypes";
 
 /** How often to re-poll GET /workspace while a phase is mid-transition. */
 const POLL_MS = 10000;

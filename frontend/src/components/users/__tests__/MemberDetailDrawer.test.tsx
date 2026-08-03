@@ -3,11 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import MemberDetailDrawer from "@/components/users/MemberDetailDrawer";
+import { useNoticeStore } from "@/state/store/noticeStore";
 import { formatDate, formatDateTime } from "@/utils/formatDate";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import type { TBatchResult, TTeamTree } from "@/types/teamTypes";
 import type { TUserListItem } from "@/types/userTypes";
-import { useNoticeStore } from "@/stores/noticeStore";
 
 /** Minimal team fixture — matches the user's one membership plus a
     second, unjoined team for the add picker. */

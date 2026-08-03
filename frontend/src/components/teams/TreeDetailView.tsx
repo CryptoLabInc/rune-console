@@ -19,10 +19,8 @@ import CreateTeamModal from "@/components/teams/CreateTeamModal";
 import DeleteTeamModal from "@/components/teams/DeleteTeamModal";
 import MemberBatchFailureModal from "@/components/teams/MemberBatchFailureModal";
 import RenameTeamModal from "@/components/teams/RenameTeamModal";
-import { ROLE_OPTIONS } from "@/components/teams/teamOptions";
 import TeamTree from "@/components/tree/TeamTree";
 import MembershipRemoveModal from "@/components/users/MembershipRemoveModal";
-import { CHIP_STATUS } from "@/components/users/memberStatusMap";
 import RoleChangeConfirmModal from "@/components/users/RoleChangeConfirmModal";
 import {
   useAddTeamMemberMutation,
@@ -46,6 +44,7 @@ import {
   useSyncPaginationTotal,
 } from "@/hooks/useServerPagination";
 import { parseErrorCode } from "@/api/parseError";
+import { useNoticeStore } from "@/state/store/noticeStore";
 import { formatDate } from "@/utils/formatDate";
 import { TEAM_MEMBER_ROLE } from "@/constants/apiConstants";
 import {
@@ -60,10 +59,14 @@ import {
   TEAM_REASON,
 } from "@/constants/errorConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
-import type { TTeamNode } from "@/types/commonTypes";
-import type { TTeamMemberRole, TTeamTree } from "@/types/teamTypes";
+import { ROLE_OPTIONS } from "@/constants/teamConstants";
+import { CHIP_STATUS } from "@/constants/userConstants";
+import type {
+  TTeamMemberRole,
+  TTeamTree,
+  TTeamViewNode,
+} from "@/types/teamTypes";
 import type { TRoleChange } from "@/types/userTypes";
-import { useNoticeStore } from "@/stores/noticeStore";
 
 const styles = {
   body: "flex min-h-[340px] flex-1",
@@ -96,18 +99,18 @@ type TActiveModal =
 
 /**
  * GET /teams/tree returns flat nodes — the client builds the recursive
- * TTeamNode shape the TeamTree component consumes (API design §3).
+ * TTeamViewNode shape the TeamTree component consumes (API design §3).
  * Single pass over a children index (not a filter per parent), so the
  * build stays linear in team count.
  */
-const buildTeamNodes = (teams: TTeamTree): TTeamNode[] => {
+const buildTeamNodes = (teams: TTeamTree): TTeamViewNode[] => {
   const childrenOf = new Map<string | null, TTeamTree>();
   for (const team of teams) {
     const siblings = childrenOf.get(team.parentId);
     if (siblings) siblings.push(team);
     else childrenOf.set(team.parentId, [team]);
   }
-  const build = (parentId: string | null): TTeamNode[] =>
+  const build = (parentId: string | null): TTeamViewNode[] =>
     (childrenOf.get(parentId) ?? []).map((team) => ({
       id: team.id,
       name: team.name,
@@ -117,8 +120,11 @@ const buildTeamNodes = (teams: TTeamTree): TTeamNode[] => {
   return build(null);
 };
 
-const findTeamNode = (nodes: TTeamNode[], id: string): TTeamNode | undefined =>
-  nodes.reduce<TTeamNode | undefined>(
+const findTeamNode = (
+  nodes: TTeamViewNode[],
+  id: string,
+): TTeamViewNode | undefined =>
+  nodes.reduce<TTeamViewNode | undefined>(
     (found, node) =>
       found ?? (node.id === id ? node : findTeamNode(node.children ?? [], id)),
     undefined,

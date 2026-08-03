@@ -8,8 +8,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import Navbar from "@/components/navigation/Navbar";
 import * as authAPIs from "@/api/authAPIs";
 import * as workspaceAPIs from "@/api/workspaceAPIs";
+import { useWorkspaceStore } from "@/state/store/workspaceStore";
 import { BTN_TEXT } from "@/constants/commonConstants";
-import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 const jsonRes = (body: unknown) =>
   ({ ok: true, status: 200, json: async () => body }) as unknown as Response;

@@ -4,13 +4,13 @@ import Button from "@/components/elements/Button";
 import Input from "@/components/elements/Input";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
-import {
-  TEAM_NAME_PATTERN,
-  TEAM_NAME_RULE_TEXT,
-} from "@/components/teams/teamOptions";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import { TEAM_NAME_DUPLICATE_TEXT } from "@/constants/errorConstants";
 import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
+import {
+  TEAM_NAME_PATTERN,
+  TEAM_NAME_RULE_TEXT,
+} from "@/constants/teamConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 
 interface RenameTeamModalProps {

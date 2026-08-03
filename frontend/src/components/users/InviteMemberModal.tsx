@@ -6,10 +6,10 @@ import Input from "@/components/elements/Input";
 import MemberStatus from "@/components/elements/MemberStatus";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
-import { buildTeamOptions, ROLE_OPTIONS } from "@/components/teams/teamOptions";
-import { buildInvitePreview } from "@/components/users/invitePreview";
 import ModalTable from "@/components/users/ModalTable";
+import { buildTeamOptions } from "@/utils/buildTeamOptions";
 import { EMAIL_FORMAT_ERROR, EMAIL_PATTERN } from "@/utils/email";
+import { buildInvitePreview } from "@/utils/invitePreview";
 import {
   isSubmittableUsername,
   normalizeUsernameInput,
@@ -24,6 +24,7 @@ import {
   TABLE_HEADERS,
 } from "@/constants/commonConstants";
 import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
+import { ROLE_OPTIONS } from "@/constants/teamConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 import type { TInvitePayload, TInviteResult } from "@/types/userTypes";
 

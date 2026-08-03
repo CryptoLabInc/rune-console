@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-import MembershipRow from "@/components/drawer/MembershipRow";
 import Button from "@/components/elements/Button";
 import Checkbox from "@/components/elements/Checkbox";
 import Dropdown from "@/components/elements/Dropdown";
@@ -13,12 +12,10 @@ import TableHead from "@/components/table/TableHead";
 import TableHeaderCell from "@/components/table/TableHeaderCell";
 import TableRow from "@/components/table/TableRow";
 import MemberBatchFailureModal from "@/components/teams/MemberBatchFailureModal";
-import { getTeamDescendantIds } from "@/components/teams/teamHierarchy";
-import { buildTeamOptions, ROLE_OPTIONS } from "@/components/teams/teamOptions";
 import CancelInvitationModal from "@/components/users/CancelInvitationModal";
 import MemberDeleteModal from "@/components/users/MemberDeleteModal";
 import MembershipRemoveModal from "@/components/users/MembershipRemoveModal";
-import { CHIP_STATUS } from "@/components/users/memberStatusMap";
+import MembershipRow from "@/components/users/MembershipRow";
 import RoleChangeConfirmModal from "@/components/users/RoleChangeConfirmModal";
 import SessionDeactivateModal from "@/components/users/SessionDeactivateModal";
 import {
@@ -27,7 +24,10 @@ import {
 } from "@/hooks/useBatchFailureModal";
 import { usePageScopedSelection } from "@/hooks/usePageScopedSelection";
 import { parseErrorCode } from "@/api/parseError";
+import { useNoticeStore } from "@/state/store/noticeStore";
+import { buildTeamOptions } from "@/utils/buildTeamOptions";
 import { formatDate, formatDateTime } from "@/utils/formatDate";
+import { getTeamDescendantIds } from "@/utils/teamHierarchy";
 import {
   ERROR_CODES,
   INVITATION_STATUS,
@@ -42,9 +42,10 @@ import {
 import { BATCH_REASON_FALLBACK } from "@/constants/errorConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import { INVITATION_STATUS_VAR } from "@/constants/styleConstants";
+import { ROLE_OPTIONS } from "@/constants/teamConstants";
+import { CHIP_STATUS } from "@/constants/userConstants";
 import type { TBatchResult, TTeamTree } from "@/types/teamTypes";
 import type { TUserListItem } from "@/types/userTypes";
-import { useNoticeStore } from "@/stores/noticeStore";
 
 const styles = {
   /* Status chip sits to the left of the access-time text, vertically

@@ -3,8 +3,9 @@
  * Visual values are translated from UIKIT modules/rune-ui-buttons and
  * modules/rune-admin-kit CSS — UIKIT is the design source of truth.
  */
-import type { TMemberStatus, TWorkspaceStatus } from "@/types/commonTypes";
+import type { TMemberStatus } from "@/types/commonTypes";
 import type { TInvitationStatus } from "@/types/teamTypes";
+import type { TWorkspaceStatus } from "@/types/workspaceTypes";
 
 /** Status → chip/badge presentation (label + text color). */
 type TStatusStyle = { label: string; color: string };

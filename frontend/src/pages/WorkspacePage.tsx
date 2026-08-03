@@ -8,9 +8,9 @@ import {
   isTransitionalStatus,
   useWorkspaceQuery,
 } from "@/hooks/queries/useWorkspaceQuery";
+import { useWorkspaceStore } from "@/state/store/workspaceStore";
 import { WORKSPACE_STATUS } from "@/constants/apiConstants";
 import { PAGE_TITLES, PATH_LIST } from "@/constants/commonConstants";
-import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 const panelClass =
   "m-6 flex min-h-[340px] flex-col items-center justify-center gap-3 text-center";

@@ -2,9 +2,9 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import WorkspaceModal from "@/components/workspace/WorkspaceModal";
+import { useWorkspaceStore } from "@/state/store/workspaceStore";
 import { BTN_TEXT, PATH_LIST } from "@/constants/commonConstants";
-import type { TWorkspace, TWorkspaceStatus } from "@/types/commonTypes";
-import { useWorkspaceStore } from "@/stores/workspaceStore";
+import type { TWorkspace, TWorkspaceStatus } from "@/types/workspaceTypes";
 
 /* The modal's data + mutations are mocked so each render variant (detail,
    busy, D-1/D-1 실패, D-2, D-3) can be driven directly. */

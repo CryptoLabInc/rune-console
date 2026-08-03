@@ -1,8 +1,8 @@
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import ToastContainer from "@/components/toast/ToastContainer";
-import { useToastStore } from "@/stores/toastStore";
+import ToastContainer from "@/components/elements/ToastContainer";
+import { useToastStore } from "@/state/store/toastStore";
 
 describe("ToastContainer", () => {
   beforeEach(() => {

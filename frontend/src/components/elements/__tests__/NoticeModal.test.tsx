@@ -2,8 +2,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import NoticeModal from "@/components/elements/NoticeModal";
+import { useNoticeStore } from "@/state/store/noticeStore";
 import { BTN_TEXT } from "@/constants/commonConstants";
-import { useNoticeStore } from "@/stores/noticeStore";
 
 afterEach(() => {
   useNoticeStore.setState({ notice: null });

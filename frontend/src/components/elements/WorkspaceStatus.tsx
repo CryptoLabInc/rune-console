@@ -1,6 +1,6 @@
 import { cn } from "@/utils/cn";
 import { WORKSPACE_STATUS_VAR } from "@/constants/styleConstants";
-import type { TWorkspaceStatus } from "@/types/commonTypes";
+import type { TWorkspaceStatus } from "@/types/workspaceTypes";
 
 interface WorkspaceStatusProps {
   status: TWorkspaceStatus;

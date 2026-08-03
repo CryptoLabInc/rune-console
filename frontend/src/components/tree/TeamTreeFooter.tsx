@@ -1,5 +1,5 @@
 import { cn } from "@/utils/cn";
-import type { TTeamNode } from "@/types/commonTypes";
+import type { TTeamViewNode } from "@/types/teamTypes";
 
 const styles = {
   wrap: "bg-mint/[2%] grid grid-cols-[auto_1fr_auto] items-center gap-2.5 border-t px-4 py-3",
@@ -9,7 +9,7 @@ const styles = {
 };
 
 interface TeamTreeFooterProps {
-  node: TTeamNode;
+  node: TTeamViewNode;
   className?: string;
 }
 
