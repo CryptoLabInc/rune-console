@@ -8,9 +8,9 @@ import UsersPage from "@/pages/UsersPage";
 import * as invitationAPIs from "@/api/invitationAPIs";
 import * as teamAPIs from "@/api/teamAPIs";
 import * as userAPIs from "@/api/userAPIs";
+import { useNoticeStore } from "@/state/store/noticeStore";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import type { TUserListItem } from "@/types/userTypes";
-import { useNoticeStore } from "@/stores/noticeStore";
 
 const jsonRes = (body: unknown) =>
   ({ ok: true, json: async () => body }) as unknown as Response;

@@ -5,11 +5,7 @@ import Dropdown from "@/components/elements/Dropdown";
 import Input from "@/components/elements/Input";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
-import {
-  buildTeamOptions,
-  TEAM_NAME_PATTERN,
-  TEAM_NAME_RULE_TEXT,
-} from "@/components/teams/teamOptions";
+import { buildTeamOptions } from "@/utils/buildTeamOptions";
 import {
   BTN_TEXT,
   MODAL_TITLES,
@@ -17,6 +13,10 @@ import {
 } from "@/constants/commonConstants";
 import { TEAM_NAME_DUPLICATE_TEXT } from "@/constants/errorConstants";
 import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
+import {
+  TEAM_NAME_PATTERN,
+  TEAM_NAME_RULE_TEXT,
+} from "@/constants/teamConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 
 interface CreateTeamModalProps {

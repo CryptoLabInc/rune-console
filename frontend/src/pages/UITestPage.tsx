@@ -1,6 +1,5 @@
 import { Fragment, useEffect, useState } from "react";
 
-import MembershipRow from "@/components/drawer/MembershipRow";
 import Badge from "@/components/elements/Badge";
 import Button from "@/components/elements/Button";
 import Checkbox from "@/components/elements/Checkbox";
@@ -24,9 +23,10 @@ import TableHead from "@/components/table/TableHead";
 import TableHeaderCell from "@/components/table/TableHeaderCell";
 import TableRow from "@/components/table/TableRow";
 import TableToolbar from "@/components/table/TableToolbar";
-import { ROLE_OPTIONS } from "@/components/teams/teamOptions";
 import TeamTree from "@/components/tree/TeamTree";
 import TeamTreeFooter from "@/components/tree/TeamTreeFooter";
+import MembershipRow from "@/components/users/MembershipRow";
+import { useToastStore } from "@/state/store/toastStore";
 import { cn } from "@/utils/cn";
 import { BTN_TEXT } from "@/constants/commonConstants";
 import {
@@ -35,14 +35,11 @@ import {
   MEMBER_STATUS_VAR,
   WORKSPACE_STATUS_VAR,
 } from "@/constants/styleConstants";
-import type {
-  TMemberStatus,
-  TTeamNode,
-  TWorkspaceStatus,
-} from "@/types/commonTypes";
+import { ROLE_OPTIONS } from "@/constants/teamConstants";
+import type { TMemberStatus } from "@/types/commonTypes";
 import type { TBTNColor } from "@/types/styleTypes";
-import type { TInvitationStatus } from "@/types/teamTypes";
-import { useToastStore } from "@/stores/toastStore";
+import type { TInvitationStatus, TTeamViewNode } from "@/types/teamTypes";
+import type { TWorkspaceStatus } from "@/types/workspaceTypes";
 
 type TUITestModal = "alert" | "confirm" | "wide" | "scroll" | null;
 
@@ -114,7 +111,7 @@ const SESSION_ROWS = [
   { account: "a@corp.com", issuedAt: "2026-07-05 18:20", connectedAt: "" },
 ];
 
-const TEAM_FIXTURE: TTeamNode[] = [
+const TEAM_FIXTURE: TTeamViewNode[] = [
   {
     id: "platform",
     name: "Platform",
@@ -202,7 +199,9 @@ const UITestPage = () => {
   const [tableSearch, setTableSearch] = useState("");
   const [tablePage, setTablePage] = useState(1);
   const [treeQuery, setTreeQuery] = useState("");
-  const [treeSelected, setTreeSelected] = useState<TTeamNode>(TEAM_FIXTURE[0]);
+  const [treeSelected, setTreeSelected] = useState<TTeamViewNode>(
+    TEAM_FIXTURE[0],
+  );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [memberships, setMemberships] = useState(
     MEMBERSHIP_FIXTURE.map((m) => ({ ...m, role: m.baseRole })),

@@ -10,6 +10,7 @@ import TreeDetailView from "@/components/teams/TreeDetailView";
 import { useCreateTeamMutation } from "@/hooks/mutations/useTeamMutations";
 import { useTeamsTreeQuery } from "@/hooks/queries/useTeamsTreeQuery";
 import { parseErrorCode } from "@/api/parseError";
+import { useNoticeStore } from "@/state/store/noticeStore";
 import { cn } from "@/utils/cn";
 import {
   BTN_TEXT,
@@ -18,7 +19,6 @@ import {
 } from "@/constants/commonConstants";
 import { TEAM_REASON } from "@/constants/errorConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
-import { useNoticeStore } from "@/stores/noticeStore";
 
 const feedbackPanel =
   "m-6 flex min-h-[340px] flex-col items-center justify-center gap-3 text-center";

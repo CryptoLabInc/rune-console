@@ -15,6 +15,16 @@ export type TTeamNode = {
 
 export type TTeamTree = TTeamNode[];
 
+/** Recursive team-tree node the tree/org views consume (UIKIT
+    AdminTeamNode, wireframe SC-06) — built client-side from the flat
+    TTeamTree. Distinct from TTeamNode, the flat wire row above. */
+export type TTeamViewNode = {
+  id: string;
+  name: string;
+  members: number;
+  children?: TTeamViewNode[];
+};
+
 /** Grantable member role — derived from TEAM_MEMBER_ROLE (single source). */
 export type TTeamMemberRole =
   (typeof TEAM_MEMBER_ROLE)[keyof typeof TEAM_MEMBER_ROLE];
