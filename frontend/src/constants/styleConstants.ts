@@ -93,11 +93,10 @@ export const MODAL_STYLE_VAR = {
   message: "text-center text-base",
   /* Vertical form/content stack. */
   body: "flex w-full flex-col gap-4",
-  /* Button row. Two variants are in active use — the users-flow modals
-     space with gap-4, the team/workspace ones with gap-2. Kept as named
-     variants until a design pass picks one. */
+  /* Button row — one spacing for every confirm modal (the team/workspace
+     modals used to sit at gap-2 while the users flows used gap-4; unified
+     on gap-4, 2026-08-03). */
   footer: "flex w-full items-center gap-4",
-  footerCompact: "flex w-full gap-2",
 } as const;
 
 /* Session chips — the only status a list view shows. The satisfies clause
