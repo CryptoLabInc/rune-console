@@ -86,7 +86,7 @@ const CreateTeamModal = ({
         </Notice>
         {error && <Notice tone="error">{error}</Notice>}
       </div>
-      <div className={MODAL_STYLE_VAR.footerCompact}>
+      <div className={MODAL_STYLE_VAR.footer}>
         <Button
           btnText={BTN_TEXT.cancel}
           btnSize="md"
