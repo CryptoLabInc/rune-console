@@ -93,7 +93,7 @@ export const en = {
     invitation: {
       pending: "Invitation Pending",
       expired: "Invitation Code Expired",
-      redeemed: "Invitation Code Used",
+      redeemed: "Invitation code sent",
     },
     workspace: {
       provisioning: "Creating",
@@ -156,7 +156,7 @@ export const en = {
     selectRole: "Select Role",
     // Sentence split around the inline member-status chip: prefix + status + suffix.
     invitePrefix:
-      "Once the invited user connects rune, their status changes to ",
+      "Once the invited user connects RUNE, their status changes to ",
     inviteSuffix: ".",
     // Team name / create / rename
     teamNameRule: "Only numbers, Korean and English letters, - and _ are allowed.",
@@ -259,7 +259,7 @@ export const en = {
     reason: "Reason",
     // Sentence split around the inline member-status chip: prefix + status + suffix.
     invitePrefix:
-      "When invited, the user receives an invitation code; once they connect rune within 24 hours, their status changes to ",
+      "When invited, the user receives an invitation code; once they connect RUNE within 24 hours, their status changes to ",
     inviteSuffix: ".",
     inviteExpiry:
       "If they do not connect, the code expires and you can invite them again with Resend Invitation Code.",
@@ -310,7 +310,7 @@ export const en = {
     noInvitationToCancel: "No invitation to cancel.",
     cancelInvitationFailed: "Failed to cancel invitation. Please try again.",
     // Users page (SC-11)
-    lastInviteSent: "Last Invitation Code Sent",
+    lastInviteSent: "Invitation Code",
     resendFailedShort: "Resend failed",
     deleteMembersTitle: "Delete Members",
     membersDeleted: "Members deleted.",

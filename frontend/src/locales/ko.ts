@@ -154,7 +154,7 @@ export const ko: TLocale = {
     roleLabel: "권한 (role)",
     selectRole: "권한 선택",
     // 인라인 멤버 상태 칩을 사이에 둔 문장 분할: prefix + status + suffix.
-    invitePrefix: "초대받은 사용자가 rune을 연결하면 ",
+    invitePrefix: "초대받은 사용자가 RUNE을 연결하면 ",
     inviteSuffix: "으로 전환됩니다.",
     // Team name / create / rename
     teamNameRule: "숫자·한글·영어와 - _ 만 사용할 수 있습니다.",
@@ -253,7 +253,7 @@ export const ko: TLocale = {
     reason: "사유",
     // 인라인 멤버 상태 칩을 사이에 둔 문장 분할: prefix + status + suffix.
     invitePrefix:
-      "초대 시 사용자에게 초대 코드가 발송되어 사용자가 24시간 내 rune을 연결하면 ",
+      "초대 시 사용자에게 초대 코드가 발송되어 사용자가 24시간 내 RUNE을 연결하면 ",
     inviteSuffix: " 으로 전환됩니다.",
     inviteExpiry:
       "미연결 시 코드가 만료되고 초대 코드 재전송으로 사용자를 다시 초대할 수 있습니다.",
