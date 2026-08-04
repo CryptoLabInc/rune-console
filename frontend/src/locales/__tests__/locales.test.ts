@@ -17,7 +17,9 @@ import { WORKSPACE_STATUS_VAR } from "@/constants/styleConstants";
 describe("locales", () => {
   it("resolves Korean under the test pin (setup.ts sets rc_lang=ko)", () => {
     expect(language).toBe("ko");
-    expect(L).toBe(ko);
+    // L is now a Proxy over the active table (not the raw object), so compare
+    // by structure rather than reference.
+    expect(L).toStrictEqual(ko);
     expect(BTN_TEXT.close).toBe("닫기");
     expect(MODAL_TITLES.deleteTeam("platform")).toBe("팀 삭제 — platform");
     expect(MODAL_TITLES.deleteMemberBulk(3)).toBe("멤버 삭제 (3명)");
