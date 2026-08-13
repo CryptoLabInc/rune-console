@@ -1,4 +1,5 @@
 import type { TTeamTree, TTeamViewNode } from "@/types/teamTypes";
+import { L } from "@/locales";
 
 /**
  * Team-tree lookups over a flat `TTeamTree` — shared by the invite preview
@@ -7,9 +8,21 @@ import type { TTeamTree, TTeamViewNode } from "@/types/teamTypes";
  * are small, so no memoized id-map is kept at module scope.
  */
 
+/**
+ * DEMO ONLY. Maps the mock server's English sample team names (Platform,
+ * Data, …) to the active language so the demo reads naturally when toggled.
+ * Real, customer-created names are not in L.demoTeams, so they pass through
+ * verbatim — team names are user data and must never be auto-translated in
+ * production. Read at render time (the `key={lang}` remount re-runs the
+ * callers), so it follows a live language switch. Delete/neutralize this
+ * once the app talks to a real backend with real team names.
+ */
+export const localizeTeamName = (name: string): string =>
+  (L.demoTeams as Record<string, string>)[name] ?? name;
+
 /** Team name for `teamId`, or the id itself if the team is unknown. */
 export const getTeamName = (teams: TTeamTree, teamId: string): string =>
-  teams.find((team) => team.id === teamId)?.name ?? teamId;
+  localizeTeamName(teams.find((team) => team.id === teamId)?.name ?? teamId);
 
 /** All descendant ids of a team, in depth-first tree order. */
 export const getTeamDescendantIds = (
@@ -36,7 +49,7 @@ export const buildTeamNodes = (teams: TTeamTree): TTeamViewNode[] => {
   const build = (parentId: string | null): TTeamViewNode[] =>
     (childrenOf.get(parentId) ?? []).map((team) => ({
       id: team.id,
-      name: team.name,
+      name: localizeTeamName(team.name),
       members: team.memberCount,
       children: team.childCount > 0 ? build(team.id) : undefined,
     }));

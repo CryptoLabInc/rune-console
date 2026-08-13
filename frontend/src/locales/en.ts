@@ -78,7 +78,7 @@ export const en = {
   nav: {
     teams: "Team Management",
     users: "Member Management",
-    sessions: "Session History",
+    sessions: "Session Management",
   },
   login: {
     failed1: "There was a problem signing in.",
@@ -382,6 +382,17 @@ export const en = {
   validation: {
     usernameRule:
       "Only Korean, lowercase English letters, and single spaces between words are allowed.",
+  },
+  /* DEMO ONLY. The mock server seeds English sample team names; these map
+     the known sample names to each language so the demo reads naturally
+     when toggled. This is NOT for real, customer-created team names — those
+     are user data and must render verbatim (see localizeTeamName). */
+  demoTeams: {
+    Platform: "Platform",
+    Payments: "Payments",
+    Infra: "Infra",
+    Data: "Data",
+    Growth: "Growth",
   },
 };
 
