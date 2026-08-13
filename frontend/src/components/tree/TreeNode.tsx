@@ -3,7 +3,8 @@ import type { CSSProperties } from "react";
 import IconMinus from "@/components/icons/IconMinus";
 import IconPlus from "@/components/icons/IconPlus";
 import { cn } from "@/utils/cn";
-import type { TTeamNode } from "@/types/commonTypes";
+import type { TTeamViewNode } from "@/types/teamTypes";
+import { L } from "@/locales";
 
 const styles = {
   row: "grid grid-cols-[24px_1fr] items-center rounded-sm pl-[calc(var(--tree-depth)*18px)] transition-[background-color] duration-[160ms]",
@@ -16,11 +17,11 @@ const styles = {
 };
 
 interface TreeNodeProps {
-  node: TTeamNode;
+  node: TTeamViewNode;
   depth: number;
   selectedId?: string;
   expanded: Set<string>;
-  onSelect: (node: TTeamNode) => void;
+  onSelect: (node: TTeamViewNode) => void;
   onToggle: (id: string) => void;
   /** Active search text (trimmed + lowercased) — emphasizes the match. */
   highlight?: string;
@@ -81,7 +82,11 @@ const TreeNode = ({
           <button
             type="button"
             className={styles.toggle}
-            aria-label={`${node.name} ${isOpen ? "접기" : "펼치기"}`}
+            aria-label={
+              isOpen
+                ? L.teams.collapseName(node.name)
+                : L.teams.expandName(node.name)
+            }
             aria-expanded={isOpen}
             onClick={() => onToggle(node.id)}
           >

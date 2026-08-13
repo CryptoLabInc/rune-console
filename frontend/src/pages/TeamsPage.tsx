@@ -7,18 +7,15 @@ import SearchInput from "@/components/elements/SearchInput";
 import CreateTeamModal from "@/components/teams/CreateTeamModal";
 import OrgChart from "@/components/teams/OrgChart";
 import TreeDetailView from "@/components/teams/TreeDetailView";
-import { useCreateTeamMutation } from "@/hooks/mutations/useTeamMutations";
 import { useTeamsTreeQuery } from "@/hooks/queries/useTeamsTreeQuery";
-import { parseErrorCode } from "@/api/parseError";
+import { useTeamCrud } from "@/hooks/useTeamCrud";
 import { cn } from "@/utils/cn";
-import { BTN_TEXT } from "@/constants/commonConstants";
-import { useNoticeStore } from "@/stores/noticeStore";
-
-/** Create-team error codes → SC-07 copy (shared with TreeDetailView). */
-const CREATE_TEAM_REASON: Record<string, string> = {
-  TEAM_NAME_DUPLICATE: "같은 상위 팀에 동일한 이름이 이미 있습니다.",
-  TEAM_NAME_INVALID: "팀 이름 형식이 올바르지 않습니다.",
-};
+import {
+  BTN_TEXT,
+  FEEDBACK_TEXT,
+  PAGE_TITLES,
+} from "@/constants/commonConstants";
+import { L } from "@/locales";
 
 const feedbackPanel =
   "m-6 flex min-h-[340px] flex-col items-center justify-center gap-3 text-center";
@@ -57,28 +54,17 @@ const TeamsPage = () => {
 
   /* SC-06 state B (팀 0개) create action — the tree panel's [새 팀 만들기]
      is gone when there are no teams, so the empty panel owns the create
-     flow (same mutation/error mapping as TreeDetailView's SC-07). */
+     flow (same mutation/error mapping as TreeDetailView's SC-07, via the
+     shared useTeamCrud hook). */
   const [createOpen, setCreateOpen] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const createTeam = useCreateTeamMutation();
-  const showNotice = useNoticeStore((s) => s.showNotice);
-
-  const handleCreate = (name: string, parentId: string | null) => {
-    setCreateError(null);
-    createTeam.mutate(
-      { name, parentId },
-      {
-        onSuccess: () => {
-          setCreateOpen(false);
-          showNotice("팀 생성", "팀이 생성되었습니다.", "success");
-        },
-        onError: async (res) => {
-          const code = await parseErrorCode(res);
-          setCreateError(CREATE_TEAM_REASON[code] ?? "팀 생성에 실패했습니다.");
-        },
-      },
-    );
-  };
+  const {
+    teamError: createError,
+    clearTeamError,
+    handleCreate,
+  } = useTeamCrud({
+    teamId: "",
+    onDone: () => setCreateOpen(false),
+  });
 
   /* 트리·상세 is the entry view (its first top-level team auto-selected);
      조직도 is reached by the view toggle. */
@@ -120,18 +106,18 @@ const TeamsPage = () => {
 
   if (isPending) {
     return (
-      <section className={styles.panel} aria-label="팀 관리">
+      <section className={styles.panel} aria-label={PAGE_TITLES.teams}>
         <div className={styles.header} />
       </section>
     );
   }
   if (isError) {
     return (
-      <section className={styles.panel} aria-label="팀 관리">
+      <section className={styles.panel} aria-label={PAGE_TITLES.teams}>
         <Feedback
           state="error"
-          title="팀 정보를 불러올 수 없습니다."
-          description="새로고침 후 다시 시도해 주세요."
+          title={L.teams.teamsLoadError}
+          description={FEEDBACK_TEXT.refreshRetry}
           className={feedbackPanel}
           action={
             <Button
@@ -148,9 +134,13 @@ const TeamsPage = () => {
   }
 
   return (
-    <section className={styles.panel} aria-label="팀 관리">
+    <section className={styles.panel} aria-label={PAGE_TITLES.teams}>
       <div className={styles.header}>
-        <div className={styles.segment} role="group" aria-label="보기 전환">
+        <div
+          className={styles.segment}
+          role="group"
+          aria-label={L.teams.switchView}
+        >
           <button
             type="button"
             className={cn(
@@ -159,7 +149,7 @@ const TeamsPage = () => {
             aria-pressed={view === "tree"}
             onClick={() => setView("tree")}
           >
-            트리·상세
+            {L.teams.treeDetail}
           </button>
           <button
             type="button"
@@ -169,7 +159,7 @@ const TeamsPage = () => {
             aria-pressed={view === "org"}
             onClick={() => setView("org")}
           >
-            조직도
+            {L.teams.orgChartView}
           </button>
         </div>
         {/* Nothing to search when there are no teams (SC-06 state B). */}
@@ -177,7 +167,7 @@ const TeamsPage = () => {
           <SearchInput
             value={teamSearch}
             onChange={setTeamSearch}
-            placeholder="팀 검색"
+            placeholder={L.teams.searchTeams}
             maxLength={50}
             className="ml-auto w-55"
           />
@@ -187,8 +177,8 @@ const TeamsPage = () => {
       {teams.length === 0 ? (
         <Feedback
           state="empty"
-          title="새로운 팀을 만들어 주세요."
-          description="팀을 생성하면 멤버와 기억(memory)을 관리할 수 있습니다."
+          title={L.teams.emptyTitle}
+          description={L.teams.emptyDesc}
           className={feedbackPanel}
           action={
             <Button
@@ -197,7 +187,7 @@ const TeamsPage = () => {
               btnColor="mintFilled"
               className="w-fit"
               handleClick={() => {
-                setCreateError(null);
+                clearTeamError();
                 setCreateOpen(true);
               }}
             />

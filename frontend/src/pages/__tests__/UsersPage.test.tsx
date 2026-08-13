@@ -8,9 +8,9 @@ import UsersPage from "@/pages/UsersPage";
 import * as invitationAPIs from "@/api/invitationAPIs";
 import * as teamAPIs from "@/api/teamAPIs";
 import * as userAPIs from "@/api/userAPIs";
+import { useNoticeStore } from "@/state/store/noticeStore";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import type { TUserListItem } from "@/types/userTypes";
-import { useNoticeStore } from "@/stores/noticeStore";
 
 const jsonRes = (body: unknown) =>
   ({ ok: true, json: async () => body }) as unknown as Response;
@@ -182,7 +182,10 @@ describe("UsersPage", () => {
       total: 12, // > PAGE_SIZE → a second page exists
       page: 1,
       size: 10,
-      items: [user("u_1", "k@corp.com", "김철수"), user("u_2", "m@corp.com", "박미영")],
+      items: [
+        user("u_1", "k@corp.com", "김철수"),
+        user("u_2", "m@corp.com", "박미영"),
+      ],
     });
     const typer = userEvent.setup();
     renderPage();
@@ -269,10 +272,7 @@ describe("UsersPage", () => {
       screen.getByPlaceholderText("user@corp.com"),
       "new@corp.com",
     );
-    await typer.type(
-      screen.getByLabelText("사용자 이름 (username)"),
-      "김신입",
-    );
+    await typer.type(screen.getByLabelText("사용자 이름 (username)"), "김신입");
     await typer.click(screen.getByRole("button", { name: "세트 1 팀" }));
     await typer.click(screen.getByRole("option", { name: "백엔드" }));
     await typer.click(screen.getByRole("button", { name: "세트 1 role" }));

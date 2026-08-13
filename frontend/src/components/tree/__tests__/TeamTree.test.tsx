@@ -3,9 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import TeamTree from "@/components/tree/TeamTree";
-import type { TTeamNode } from "@/types/commonTypes";
+import type { TTeamViewNode } from "@/types/teamTypes";
 
-const TEAMS: TTeamNode[] = [
+const TEAMS: TTeamViewNode[] = [
   {
     id: "platform",
     name: "Platform",
@@ -71,7 +71,7 @@ describe("TeamTree", () => {
   });
 
   it("prunes non-matching siblings but keeps the whole subtree of a self-match", () => {
-    const forest: TTeamNode[] = [
+    const forest: TTeamViewNode[] = [
       {
         id: "a",
         name: "Alpha",

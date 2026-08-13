@@ -1,33 +1,32 @@
 import { useState } from "react";
 
-import MembershipRow from "@/components/drawer/MembershipRow";
 import Button from "@/components/elements/Button";
-import Checkbox from "@/components/elements/Checkbox";
-import Dropdown from "@/components/elements/Dropdown";
 import MemberStatus from "@/components/elements/MemberStatus";
 import StatusBadge from "@/components/elements/StatusBadge";
 import DrawerLayout from "@/components/layout/DrawerLayout";
-import Table from "@/components/table/Table";
-import TableCell from "@/components/table/TableCell";
-import TableHead from "@/components/table/TableHead";
-import TableHeaderCell from "@/components/table/TableHeaderCell";
-import TableRow from "@/components/table/TableRow";
 import MemberBatchFailureModal from "@/components/teams/MemberBatchFailureModal";
-import { getTeamDescendantIds } from "@/components/teams/teamHierarchy";
-import { buildTeamOptions, ROLE_OPTIONS } from "@/components/teams/teamOptions";
 import CancelInvitationModal from "@/components/users/CancelInvitationModal";
 import MemberDeleteModal from "@/components/users/MemberDeleteModal";
 import MembershipRemoveModal from "@/components/users/MembershipRemoveModal";
-import { CHIP_STATUS } from "@/components/users/memberStatusMap";
+import MembershipSection from "@/components/users/MembershipSection";
 import RoleChangeConfirmModal from "@/components/users/RoleChangeConfirmModal";
 import SessionDeactivateModal from "@/components/users/SessionDeactivateModal";
+import { useMembershipDrafts } from "@/hooks/useMembershipDrafts";
 import { parseErrorCode } from "@/api/parseError";
+import { useNoticeStore } from "@/state/store/noticeStore";
 import { formatDate, formatDateTime } from "@/utils/formatDate";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
+import {
+  ERROR_CODES,
+  INVITATION_STATUS,
+  SESSION_STATUS,
+} from "@/constants/apiConstants";
+import { BTN_TEXT, TABLE_HEADERS } from "@/constants/commonConstants";
+import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import { INVITATION_STATUS_VAR } from "@/constants/styleConstants";
+import { CHIP_STATUS } from "@/constants/userConstants";
 import type { TBatchResult, TTeamTree } from "@/types/teamTypes";
 import type { TUserListItem } from "@/types/userTypes";
-import { useNoticeStore } from "@/stores/noticeStore";
+import { L } from "@/locales";
 
 const styles = {
   /* Status chip sits to the left of the access-time text, vertically
@@ -35,36 +34,22 @@ const styles = {
   statusRow: "flex items-center gap-2",
   accessTime: "text-faint font-mono text-xs",
   sectionHead: "flex items-center gap-2",
-  selectedCount: "text-accent-blue text-tag font-mono",
-  /* Action bar below the table: 변경사항 업데이트 · 제거하기 · 팀 추가하기. */
   bulkRow: "pt-2 flex justify-end gap-2",
-  /* Team+role picker row opened by [팀 추가하기]. */
-  addRow:
-    "bg-muted-foreground/[2%] mb-2 flex items-center gap-2 rounded-md border p-2",
 };
 
 /** Per-status header timestamp (SC-13 no.1 — D13). Session takes priority:
     an online member shows last access; otherwise the invitation axis drives it. */
 const subtitleFor = (user: TUserListItem): string => {
-  if (user.sessionStatus === "online") {
-    return `최근 접속 ${formatDate(user.lastAccessAt)}`;
+  if (user.sessionStatus === SESSION_STATUS.online) {
+    return L.members.lastAccessed(formatDate(user.lastAccessAt));
   }
   switch (user.invitationStatus) {
-    case "invite_redeemed":
-      return "초대 코드 사용됨 · 연결 대기 중";
-    case "invite_pending":
-    case "invite_expired":
-      return `최근 초대 코드 발송 ${formatDateTime(user.lastInvitedAt)}`;
+    case INVITATION_STATUS.redeemed:
+      return L.members.redeemedAwaiting;
+    case INVITATION_STATUS.pending:
+    case INVITATION_STATUS.expired:
+      return L.members.lastInviteSentAt(formatDateTime(user.lastInvitedAt));
   }
-};
-
-/** One staged membership row: baseRole is the saved value. */
-type TMembershipDraft = {
-  teamId: string;
-  teamName: string;
-  baseRole: string;
-  role: string;
-  checked: boolean;
 };
 
 type TDrawerModal =
@@ -74,16 +59,6 @@ type TDrawerModal =
   | "deactivate"
   | "cancel-invitation"
   | null;
-
-/** Batch-endpoint failure reasons shown by team name (SC-13 — shared
-    with the team-side codes; the drawer only ever sees these two). */
-const BATCH_REASON: Record<string, string> = {
-  TEAM_NOT_FOUND: "팀을 찾을 수 없습니다",
-  NOT_TEAM_MEMBER: "팀 멤버가 아닙니다",
-};
-// Any other code (e.g. a transient INTERNAL) shows a generic retry message
-// rather than leaking the raw backend code into the failure modal.
-const BATCH_REASON_FALLBACK = "처리에 실패했습니다. 다시 시도해 주세요.";
 
 interface MemberDetailDrawerProps {
   user: TUserListItem;
@@ -117,8 +92,8 @@ interface MemberDetailDrawerProps {
  * the role-change confirm modal) and checkbox bulk removal (SC-14),
  * invite-code actions, and member delete (SC-15). Mount with
  * key={user.userId} so switching members resets the staged state.
- * [초대 취소] (D15) and [세션 비활성화] (D12) ship with correct enable
- * rules and confirm dialogs.
+ * The membership machine lives in useMembershipDrafts; this component
+ * composes it with the account-level actions and the confirm modals.
  */
 const MemberDetailDrawer = ({
   user,
@@ -132,109 +107,35 @@ const MemberDetailDrawer = ({
   onCancelInvitation,
   teams,
 }: MemberDetailDrawerProps) => {
-  const [memberships, setMemberships] = useState<TMembershipDraft[]>(() =>
-    user.memberships.map((m) => ({
-      teamId: m.teamId,
-      teamName: m.teamName,
-      baseRole: m.role,
-      role: m.role,
-      checked: false,
-    })),
-  );
+  const drafts = useMembershipDrafts({
+    user,
+    teams,
+    onUpdateRoles,
+    onRemoveMemberships,
+    onAddMembership,
+  });
   const [openModal, setOpenModal] = useState<TDrawerModal>(null);
   const [resending, setResending] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
-  const [addTeamId, setAddTeamId] = useState("");
-  const [addRole, setAddRole] = useState("");
-  const [adding, setAdding] = useState(false);
-  const [batchFailures, setBatchFailures] = useState<
-    { account: string; reason: string }[] | null
-  >(null);
   const showNotice = useNoticeStore((state) => state.showNotice);
-  const teamOptions = buildTeamOptions(teams);
-
-  const changes = memberships.filter((m) => m.role !== m.baseRole);
-  const selected = memberships.filter((m) => m.checked);
-  const allChecked =
-    memberships.length > 0 && memberships.every((m) => m.checked);
-
-  /* Sub-team retention notice (SC-14 no.2): a selected team has a
-     descendant team whose membership stays after this removal. */
-  const remainingIds = memberships
-    .filter((m) => !m.checked)
-    .map((m) => m.teamId);
-  const subteamNotice = selected.some((m) =>
-    getTeamDescendantIds(teams, m.teamId).some((id) =>
-      remainingIds.includes(id),
-    ),
-  );
-
-  const patchMembership = (teamId: string, patch: Partial<TMembershipDraft>) =>
-    setMemberships((prev) =>
-      prev.map((m) => (m.teamId === teamId ? { ...m, ...patch } : m)),
-    );
+  const closeModal = () => setOpenModal(null);
 
   const handleResend = async () => {
     setResending(true);
     try {
       await onResendCode();
-      showNotice("초대 코드 재전송", "초대 코드를 재전송했습니다.", "info");
+      showNotice(
+        NOTICE_TEXT.resendInvitation.title,
+        NOTICE_TEXT.resendInvitation.success,
+        "info",
+      );
     } catch {
       showNotice(
-        "초대 코드 재전송",
-        "초대 코드 재전송에 실패했습니다. 다시 시도해 주세요.",
+        NOTICE_TEXT.resendInvitation.title,
+        NOTICE_TEXT.resendInvitation.failure,
         "error",
       );
     } finally {
       setResending(false);
-    }
-  };
-
-  /* Teams the user already belongs to stay out of the add picker.
-     Depth indent stripped — the narrow drawer dropdown can't fit
-     deep-tree indentation (it forces horizontal scrolling in the
-     menu); teams list flush left in tree order and long names
-     truncate with an ellipsis. */
-  const joinedIds = new Set(memberships.map((m) => m.teamId));
-  const addableTeams = teamOptions
-    .filter((o) => !joinedIds.has(o.value))
-    .map(({ value, label }) => ({ value, label }));
-
-  const resetAdd = () => {
-    setAddOpen(false);
-    setAddTeamId("");
-    setAddRole("");
-  };
-
-  const handleAdd = async () => {
-    setAdding(true);
-    try {
-      await onAddMembership(addTeamId, addRole);
-      const teamName =
-        teamOptions.find((o) => o.value === addTeamId)?.label ?? addTeamId;
-      setMemberships((prev) => [
-        ...prev,
-        {
-          teamId: addTeamId,
-          teamName,
-          baseRole: addRole,
-          role: addRole,
-          checked: false,
-        },
-      ]);
-      showNotice("팀 추가", "팀에 추가되었습니다.", "info");
-      resetAdd();
-    } catch (err) {
-      const code = err instanceof Response ? await parseErrorCode(err) : "";
-      showNotice(
-        "팀 추가",
-        code === "ALREADY_TEAM_MEMBER"
-          ? "이미 소속된 팀입니다."
-          : "팀 추가에 실패했습니다. 다시 시도해 주세요.",
-        "error",
-      );
-    } finally {
-      setAdding(false);
     }
   };
 
@@ -284,7 +185,7 @@ const MemberDetailDrawer = ({
                 btnSize="sm"
                 btnColor="grayOutline"
                 className="w-fit"
-                disabled={user.invitationStatus !== "invite_pending"}
+                disabled={user.invitationStatus !== INVITATION_STATUS.pending}
                 handleClick={() => setOpenModal("cancel-invitation")}
               />
             </div>
@@ -293,147 +194,33 @@ const MemberDetailDrawer = ({
 
         <hr />
 
-        <section className="flex flex-col gap-4">
-          <div className={styles.sectionHead}>
-            <b className="text-md">소속 팀 ({memberships.length})</b>
-            {selected.length > 0 && (
-              <span className={styles.selectedCount}>
-                {selected.length} selected
-              </span>
-            )}
-          </div>
-
-          <Table fluid>
-            <TableHead>
-              <TableHeaderCell className="w-8 pr-1">
-                <Checkbox
-                  checked={allChecked}
-                  onChange={(checked) =>
-                    setMemberships((prev) =>
-                      prev.map((m) => ({ ...m, checked })),
-                    )
-                  }
-                  ariaLabel="전체선택"
-                />
-              </TableHeaderCell>
-              <TableHeaderCell>팀</TableHeaderCell>
-              <TableHeaderCell className="w-[104px]">권한</TableHeaderCell>
-            </TableHead>
-            <tbody>
-              {memberships.length === 0 ? (
-                /* No group-role membership — a single placeholder row keeps
-                   the table shape; the team/role cells read "—". */
-                <TableRow>
-                  <TableCell className="w-8 pr-1" />
-                  <TableCell className="text-faint">—</TableCell>
-                  <TableCell className="text-faint">—</TableCell>
-                </TableRow>
-              ) : (
-                memberships.map((m) => (
-                  <MembershipRow
-                    key={m.teamId}
-                    name={m.teamName}
-                    role={m.role}
-                    roleOptions={ROLE_OPTIONS}
-                    checked={m.checked}
-                    changed={m.role !== m.baseRole}
-                    onCheck={(checked) =>
-                      patchMembership(m.teamId, { checked })
-                    }
-                    onRoleChange={(role) => patchMembership(m.teamId, { role })}
-                  />
-                ))
-              )}
-            </tbody>
-          </Table>
-
-          {/* Action bar: 변경사항 초기화 · 변경사항 업데이트 · 제거하기 ·
-              팀 추가하기 (SC-13). */}
-          <div className={styles.bulkRow}>
-            {/* Drops every staged (not yet applied) role pick back to its
-                saved value — checkboxes and committed roles stay. */}
-            <Button
-              btnText={BTN_TEXT.resetChanges}
-              btnSize="sm"
-              btnColor="grayOutline"
-              className="w-fit"
-              disabled={changes.length === 0}
-              handleClick={() =>
-                setMemberships((prev) =>
-                  prev.map((m) => ({ ...m, role: m.baseRole })),
-                )
-              }
-            />
-            <Button
-              btnText={BTN_TEXT.updateChanges}
-              btnSize="sm"
-              btnColor="mintFilled"
-              className="w-fit"
-              disabled={changes.length === 0}
-              handleClick={() => setOpenModal("role-confirm")}
-            />
-            <Button
-              btnText={BTN_TEXT.remove}
-              btnSize="sm"
-              btnColor="redFilled"
-              className="w-fit"
-              disabled={selected.length === 0}
-              handleClick={() => setOpenModal("remove")}
-            />
-            <Button
-              btnText={BTN_TEXT.addTeam}
-              btnSize="sm"
-              btnColor="mintFilled"
-              className="w-fit"
-              handleClick={() => (addOpen ? resetAdd() : setAddOpen(true))}
-            />
-          </div>
-
-          {/* Team+role picker (SC-13 no.2) — opens just above the action
-              bar via [팀 추가하기]; teams already joined are excluded. */}
-          {addOpen && (
-            <div className={`${styles.addRow} mt-3 mb-0`}>
-              <Dropdown
-                options={addableTeams}
-                placeholder={
-                  addableTeams.length === 0 ? "추가할 팀 없음" : "팀 선택"
-                }
-                value={addTeamId}
-                onChange={setAddTeamId}
-                size="sm"
-                ariaLabel="추가할 팀"
-                className="flex-1"
-                disabled={addableTeams.length === 0}
-              />
-              <Dropdown
-                options={ROLE_OPTIONS}
-                placeholder="권한 선택"
-                value={addRole}
-                onChange={setAddRole}
-                size="sm"
-                ariaLabel="추가할 role"
-                className="w-24"
-                /* No team left to join (all already joined) → the role
-                   picker has nothing to apply to, so disable it too. */
-                disabled={addableTeams.length === 0}
-              />
-              <Button
-                btnText={BTN_TEXT.add}
-                btnSize="sm"
-                btnColor="mintFilled"
-                className="w-fit"
-                disabled={addTeamId === "" || addRole === "" || adding}
-                handleClick={handleAdd}
-              />
-            </div>
-          )}
-        </section>
+        <MembershipSection
+          memberships={drafts.memberships}
+          changesCount={drafts.changes.length}
+          selectedCount={drafts.selected.length}
+          allChecked={drafts.allChecked}
+          onCheck={drafts.setChecked}
+          onCheckAll={drafts.setAllChecked}
+          onRoleChange={drafts.stageRole}
+          onResetChanges={drafts.resetStaged}
+          onOpenRoleConfirm={() => setOpenModal("role-confirm")}
+          onOpenRemove={() => setOpenModal("remove")}
+          addOpen={drafts.addOpen}
+          addTeamId={drafts.addTeamId}
+          addRole={drafts.addRole}
+          adding={drafts.adding}
+          addableTeams={drafts.addableTeams}
+          onAddTeamIdChange={drafts.setAddTeamId}
+          onAddRoleChange={drafts.setAddRole}
+          onToggleAddRow={drafts.toggleAddRow}
+          onAdd={drafts.handleAdd}
+        />
 
         <hr />
 
         <section className="flex flex-col gap-4">
           <div className={styles.sectionHead}>
-            <b className="text-md">멤버 관리</b>
+            <b className="text-md">{L.nav.users}</b>
           </div>
 
           {/* Account-level actions: 세션 비활성화 · 멤버 삭제 (SC-15) —
@@ -448,7 +235,7 @@ const MemberDetailDrawer = ({
               btnSize="sm"
               btnColor="redOutline"
               className="w-fit"
-              disabled={user.sessionStatus !== "online"}
+              disabled={user.sessionStatus !== SESSION_STATUS.online}
               handleClick={() => setOpenModal("deactivate")}
             />
             <Button
@@ -464,77 +251,28 @@ const MemberDetailDrawer = ({
 
       {openModal === "role-confirm" && (
         <RoleChangeConfirmModal
-          subjectLabel="팀"
-          changes={changes.map((m) => ({
+          subjectLabel={TABLE_HEADERS.team}
+          changes={drafts.changes.map((m) => ({
             label: m.teamName,
             from: m.baseRole,
             to: m.role,
           }))}
-          onConfirm={async () => {
-            const changedIds = changes.map((m) => m.teamId);
-            const result = await onUpdateRoles(
-              changes.map((m) => ({ teamId: m.teamId, role: m.role })),
-            );
-            const failedIds = new Set(result.failed.map((f) => f.id));
-            setMemberships((prev) =>
-              prev.map((m) =>
-                changedIds.includes(m.teamId) && !failedIds.has(m.teamId)
-                  ? { ...m, baseRole: m.role }
-                  : m,
-              ),
-            );
-            if (result.failed.length > 0) {
-              setBatchFailures(
-                result.failed.map((f) => ({
-                  account:
-                    memberships.find((m) => m.teamId === f.id)?.teamName ??
-                    f.id,
-                  reason: BATCH_REASON[f.code] ?? BATCH_REASON_FALLBACK,
-                })),
-              );
-            }
-          }}
-          onClose={() => setOpenModal(null)}
+          onConfirm={drafts.confirmRoleChanges}
+          onClose={closeModal}
         />
       )}
 
       {openModal === "remove" && (
         <MembershipRemoveModal
-          targets={selected.map((m) => ({
+          targets={drafts.selected.map((m) => ({
             account: user.account,
             teamId: m.teamId,
             teamName: m.teamName,
             role: m.role,
           }))}
-          subteamNotice={subteamNotice}
-          onConfirm={async () => {
-            const removedIds = selected.map((m) => m.teamId);
-            const result = await onRemoveMemberships(removedIds);
-            const failedIds = new Set(result.failed.map((f) => f.id));
-            setMemberships((prev) =>
-              prev.filter(
-                (m) =>
-                  !removedIds.includes(m.teamId) || failedIds.has(m.teamId),
-              ),
-            );
-            if (result.failed.length === 0) {
-              showNotice(
-                MODAL_TITLES.removeMembership,
-                "멤버십이 제거되었습니다.",
-                "success",
-              );
-            } else {
-              setBatchFailures(
-                result.failed.map((f) => ({
-                  account:
-                    memberships.find((m) => m.teamId === f.id)?.teamName ??
-                    f.id,
-                  reason: BATCH_REASON[f.code] ?? BATCH_REASON_FALLBACK,
-                })),
-              );
-            }
-          }}
-          onClose={() => setOpenModal(null)}
+          subteamNotice={drafts.subteamNotice}
+          onConfirm={drafts.confirmRemovals}
+          onClose={closeModal}
         />
       )}
 
@@ -543,14 +281,14 @@ const MemberDetailDrawer = ({
           targets={[
             {
               account: user.account,
-              memberships: memberships.map((m) => ({
+              memberships: drafts.memberships.map((m) => ({
                 teamName: m.teamName,
                 role: m.baseRole,
               })),
             },
           ]}
           onConfirm={onDeleteMember}
-          onClose={() => setOpenModal(null)}
+          onClose={closeModal}
         />
       )}
 
@@ -560,22 +298,26 @@ const MemberDetailDrawer = ({
           onConfirm={async () => {
             try {
               await onDeactivateSession();
-              setOpenModal(null);
-              showNotice("세션 비활성화", "세션을 비활성화했습니다.", "info");
+              closeModal();
+              showNotice(
+                NOTICE_TEXT.deactivateSession.title,
+                NOTICE_TEXT.deactivateSession.success,
+                "info",
+              );
             } catch (err) {
               const code =
                 err instanceof Response ? await parseErrorCode(err) : "";
-              setOpenModal(null);
+              closeModal();
               showNotice(
-                "세션 비활성화",
-                code === "SESSION_NOT_ACTIVE"
-                  ? "이미 만료된 세션입니다."
-                  : "세션 비활성화에 실패했습니다. 다시 시도해 주세요.",
+                NOTICE_TEXT.deactivateSession.title,
+                code === ERROR_CODES.SESSION_NOT_ACTIVE
+                  ? NOTICE_TEXT.deactivateSession.alreadyExpired
+                  : NOTICE_TEXT.deactivateSession.failure,
                 "error",
               );
             }
           }}
-          onClose={() => setOpenModal(null)}
+          onClose={closeModal}
         />
       )}
 
@@ -585,29 +327,33 @@ const MemberDetailDrawer = ({
           onConfirm={async () => {
             try {
               await onCancelInvitation();
-              setOpenModal(null);
-              showNotice("초대 취소", "초대를 취소했습니다.", "info");
+              closeModal();
+              showNotice(
+                NOTICE_TEXT.cancelInvitation.title,
+                NOTICE_TEXT.cancelInvitation.success,
+                "info",
+              );
             } catch (err) {
               const code =
                 err instanceof Response ? await parseErrorCode(err) : "";
-              setOpenModal(null);
+              closeModal();
               showNotice(
-                "초대 취소",
-                code === "INVITATION_NOT_PENDING"
-                  ? "취소할 초대가 없습니다."
-                  : "초대 취소에 실패했습니다. 다시 시도해 주세요.",
+                NOTICE_TEXT.cancelInvitation.title,
+                code === ERROR_CODES.INVITATION_NOT_PENDING
+                  ? NOTICE_TEXT.cancelInvitation.nothingToCancel
+                  : NOTICE_TEXT.cancelInvitation.failure,
                 "error",
               );
             }
           }}
-          onClose={() => setOpenModal(null)}
+          onClose={closeModal}
         />
       )}
 
-      {batchFailures && (
+      {drafts.batchFailures && (
         <MemberBatchFailureModal
-          failures={batchFailures}
-          onClose={() => setBatchFailures(null)}
+          failures={drafts.batchFailures}
+          onClose={drafts.closeBatchFailures}
         />
       )}
     </>

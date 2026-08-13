@@ -3,10 +3,14 @@ import { useState } from "react";
 import Button from "@/components/elements/Button";
 import ModalLayout from "@/components/layout/ModalLayout";
 import ModalTable from "@/components/users/ModalTable";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
+import {
+  BTN_TEXT,
+  MODAL_TITLES,
+  TABLE_HEADERS,
+} from "@/constants/commonConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import type { TMemberDeleteTarget } from "@/types/userTypes";
-
-const DELETE_FAILED_MESSAGE = "멤버 삭제에 실패했습니다. 다시 시도해 주세요.";
+import { L } from "@/locales";
 
 /** The team/role table, or the empty-state line when the target belongs
     to no team (no group-role membership). */
@@ -15,13 +19,13 @@ const memberTeams = (memberships: TMemberDeleteTarget["memberships"]) =>
     /* table-fixed: the 팀/권한 columns split 50/50 regardless of content,
        so the per-user tables all line up. */
     <ModalTable
-      head={["팀", "권한"]}
+      head={[TABLE_HEADERS.team, TABLE_HEADERS.role]}
       rows={memberships.map((m) => [m.teamName, m.role])}
       className="table-fixed"
     />
   ) : (
     <p className="text-muted-foreground border p-2 text-sm">
-      소속된 팀이 없습니다.
+      {L.members.noTeams}
     </p>
   );
 
@@ -71,7 +75,7 @@ const MemberDeleteModal = ({
   if (failed) {
     return (
       <ModalLayout title={title} isOpen>
-        <p className="text-center text-base">{DELETE_FAILED_MESSAGE}</p>
+        <p className={MODAL_STYLE_VAR.message}>{L.members.deleteFailed}</p>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"
@@ -88,15 +92,13 @@ const MemberDeleteModal = ({
         {single ? (
           <>
             <p className="text-base">
-              {single.account} 계정을 삭제하며, 아래 팀에서 제거됩니다:
+              {L.members.deleteSingleIntro(single.account)}
             </p>
             {memberTeams(single.memberships)}
           </>
         ) : (
           <>
-            <p className="text-base">
-              다음 멤버의 계정을 삭제하며, 아래 팀에서 제거됩니다:
-            </p>
+            <p className="text-base">{L.members.deleteBulkIntro}</p>
             {targets.map((target) => (
               <div key={target.account} className="flex flex-col gap-2">
                 <b className="text-sm">{target.account}</b>
@@ -106,7 +108,7 @@ const MemberDeleteModal = ({
           </>
         )}
       </div>
-      <div className="flex w-full items-center gap-4">
+      <div className={MODAL_STYLE_VAR.footer}>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"

@@ -101,3 +101,5 @@ buf/
 # into the runeconsole binary via go:embed). Keep the .gitkeep placeholder.
 /internal/console/webdist/*
 !/internal/console/webdist/.gitkeep
+# Local vault runtime artifacts (runevault binary is never committed)
+vault/bin/

@@ -18,6 +18,36 @@ describe("Pagination", () => {
     );
   });
 
+  it("shows a sliding 5-page window centered on the current page", () => {
+    render(<Pagination page={25} totalPages={50} onChange={() => {}} />);
+    /* Visible: 23 24 [25] 26 27 — always exactly five numbers. */
+    for (const n of ["23", "24", "25", "26", "27"]) {
+      expect(screen.getByRole("button", { name: n })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole("button", { name: "1" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "50" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("clamps the window at both ends so the button count never jumps", () => {
+    /* Head: page 1 of 53 → 1 2 3 4 5. */
+    const { rerender } = render(
+      <Pagination page={1} totalPages={53} onChange={() => {}} />,
+    );
+    for (const n of ["1", "2", "3", "4", "5"]) {
+      expect(screen.getByRole("button", { name: n })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole("button", { name: "6" })).not.toBeInTheDocument();
+
+    /* Near the tail: page 9 of 10 → 6 7 8 9 10. */
+    rerender(<Pagination page={9} totalPages={10} onChange={() => {}} />);
+    for (const n of ["6", "7", "8", "9", "10"]) {
+      expect(screen.getByRole("button", { name: n })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole("button", { name: "5" })).not.toBeInTheDocument();
+  });
+
   it("disables prev on the first page and next on the last", () => {
     const { rerender } = render(
       <Pagination page={1} totalPages={5} onChange={() => {}} />,

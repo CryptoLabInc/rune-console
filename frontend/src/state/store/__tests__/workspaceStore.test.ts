@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { useWorkspaceStore } from "@/state/store/workspaceStore";
 
 const reset = () =>
   useWorkspaceStore.setState({ modalOpen: false, deleteConfirmOpen: false });

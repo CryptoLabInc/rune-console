@@ -1,4 +1,5 @@
 import { cn } from "@/utils/cn";
+import { L } from "@/locales";
 
 const styles = {
   wrap: "flex w-fit items-center gap-2 font-mono text-sm",
@@ -10,6 +11,15 @@ const styles = {
   numActive: "bg-mint text-on-mint font-semibold hover:text-on-mint",
 };
 
+/** Sliding 5-page window centered on the current page, clamped at both
+    ends so exactly min(5, totalPages) numbers always show — the button
+    count never jumps while paging (1→[1..5], 4→[2..6], 9/10→[6..10]). */
+const pageWindow = (page: number, totalPages: number): number[] => {
+  const size = Math.min(5, totalPages);
+  const start = Math.min(Math.max(1, page - 2), totalPages - size + 1);
+  return Array.from({ length: size }, (_, i) => start + i);
+};
+
 interface PaginationProps {
   page: number;
   totalPages: number;
@@ -19,8 +29,10 @@ interface PaginationProps {
 
 /**
  * Pagination is the numbered pager (wireframe spec form): ‹ 1 2 3 ›.
- * The current page is filled mint; boundary arrows disable. Page-count
- * ellipsis (…) is deferred until a screen needs it.
+ * The current page is filled mint; boundary arrows disable. Large page
+ * counts show a sliding 5-page window around the current page — the
+ * session-history table grows without bound, so an unwindowed row of
+ * hundreds of buttons is not an option.
  */
 const Pagination = ({
   page,
@@ -29,17 +41,20 @@ const Pagination = ({
   className,
 }: PaginationProps) => {
   return (
-    <nav className={cn(styles.wrap, className)} aria-label="페이지네이션">
+    <nav
+      className={cn(styles.wrap, className)}
+      aria-label={L.elements.pagination}
+    >
       <button
         type="button"
         className={styles.arrow}
-        aria-label="이전 페이지"
+        aria-label={L.elements.prevPage}
         disabled={page <= 1}
         onClick={() => onChange(page - 1)}
       >
         ‹
       </button>
-      {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+      {pageWindow(page, totalPages).map((n) => (
         <button
           key={n}
           type="button"
@@ -53,7 +68,7 @@ const Pagination = ({
       <button
         type="button"
         className={styles.arrow}
-        aria-label="다음 페이지"
+        aria-label={L.elements.nextPage}
         disabled={page >= totalPages}
         onClick={() => onChange(page + 1)}
       >

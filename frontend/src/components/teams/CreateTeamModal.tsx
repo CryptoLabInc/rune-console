@@ -5,13 +5,16 @@ import Dropdown from "@/components/elements/Dropdown";
 import Input from "@/components/elements/Input";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
+import { buildTeamOptions } from "@/utils/buildTeamOptions";
 import {
-  buildTeamOptions,
-  TEAM_NAME_PATTERN,
-  TEAM_NAME_RULE_TEXT,
-} from "@/components/teams/teamOptions";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
+  BTN_TEXT,
+  MODAL_TITLES,
+  PLACEHOLDERS,
+} from "@/constants/commonConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
+import { TEAM_NAME_PATTERN } from "@/constants/teamConstants";
 import type { TTeamTree } from "@/types/teamTypes";
+import { L } from "@/locales";
 
 interface CreateTeamModalProps {
   /** Real GET /teams/tree result — feeds the parent-team picker and the
@@ -49,38 +52,38 @@ const CreateTeamModal = ({
   const canSubmit = trimmed.length > 0 && !isInvalidFormat && !isDuplicate;
 
   const nameError = isInvalidFormat
-    ? TEAM_NAME_RULE_TEXT
+    ? L.teams.teamNameRule
     : trimmed && isDuplicate
-      ? "같은 상위 팀에 동일한 이름이 이미 있습니다."
+      ? L.teams.dupName
       : undefined;
 
   return (
     <ModalLayout title={MODAL_TITLES.createTeam} isOpen>
-      <div className="flex w-full flex-col gap-5">
+      <div className={MODAL_STYLE_VAR.body}>
         <Input
           id="create-team-name"
-          labelText="팀 이름"
-          placeholder="예: platform-team"
+          labelText={L.teams.teamName}
+          placeholder={L.teams.teamNamePlaceholder}
           maxLength={50}
           value={name}
           setValue={setName}
-          hint={TEAM_NAME_RULE_TEXT}
+          hint={L.teams.teamNameRule}
           error={nameError}
         />
         <Dropdown
-          label="상위 팀 (선택)"
-          placeholder="팀 선택"
+          label={L.teams.parentTeamOptional}
+          placeholder={PLACEHOLDERS.selectTeam}
           options={buildTeamOptions(teams)}
           value={parentId}
           onChange={setParentId}
         />
         <Notice tone="info">
-          상위 팀을 선택하면 상위 팀의 멤버가 새 팀에 자동 복사됩니다. <br />
-          멤버 편집은 팀 생성 후 상세 페이지에서 할 수 있습니다.
+          {L.teams.parentCopyInfo1} <br />
+          {L.teams.parentCopyInfo2}
         </Notice>
         {error && <Notice tone="error">{error}</Notice>}
       </div>
-      <div className="flex w-full gap-2">
+      <div className={MODAL_STYLE_VAR.footer}>
         <Button
           btnText={BTN_TEXT.cancel}
           btnSize="md"

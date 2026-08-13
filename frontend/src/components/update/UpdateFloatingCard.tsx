@@ -9,7 +9,9 @@ import {
   useUpdateQuery,
 } from "@/hooks/queries/useUpdateQuery";
 import { reloadPage } from "@/utils/reloadPage";
+import { SYSTEM_UPDATE_STATE } from "@/constants/apiConstants";
 import { BTN_TEXT } from "@/constants/commonConstants";
+import { L } from "@/locales";
 
 const DISMISSED_KEY_PREFIX = "runeconsole.system-update.dismissed:";
 const QUEUED_TARGET_KEY = "runeconsole.system-update.queued-target";
@@ -88,7 +90,8 @@ const UpdateFloatingCard = () => {
     if (!status || !queuedTarget) return;
     const installed = status.currentVersion === queuedTarget;
     const sameJobSucceeded =
-      status.targetVersion === queuedTarget && status.state === "succeeded";
+      status.targetVersion === queuedTarget &&
+      status.state === SYSTEM_UPDATE_STATE.succeeded;
     if (!installed && !sameJobSucceeded) return;
 
     // Clear first: the next SPA must not enter a reload loop if the helper
@@ -103,7 +106,9 @@ const UpdateFloatingCard = () => {
   const targetVersion = status.targetVersion;
   const serverActive = isSystemUpdateActive(status.state);
   const busy = serverActive || updateMutation.isPending;
-  const failed = !busy && (status.state === "failed" || updateMutation.isError);
+  const failed =
+    !busy &&
+    (status.state === SYSTEM_UPDATE_STATE.failed || updateMutation.isError);
   const initiallyEligible = status.capable && status.updateAvailable;
 
   if (!busy && !initiallyEligible) return null;
@@ -129,10 +134,10 @@ const UpdateFloatingCard = () => {
   };
 
   const title = busy
-    ? "콘솔을 업데이트하는 중입니다"
+    ? L.workspace.updatingTitle
     : failed
-      ? "업데이트에 실패했습니다"
-      : "새 버전이 출시되었습니다";
+      ? L.workspace.updateFailedTitle
+      : L.workspace.newVersionTitle;
 
   return (
     <aside
@@ -157,19 +162,15 @@ const UpdateFloatingCard = () => {
         >
           <IconSpinner className="text-mint size-5 flex-none" />
           <span>
-            {status.state === "running"
-              ? "백업 및 업데이트를 진행하고 있습니다…"
-              : "업데이트를 준비하고 있습니다…"}
+            {status.state === SYSTEM_UPDATE_STATE.running
+              ? L.workspace.updateRunning
+              : L.workspace.updatePreparing}
           </span>
         </div>
       ) : failed ? (
-        <Notice tone="error">
-          업데이트를 완료하지 못했습니다. 상태를 확인한 뒤 다시 시도해 주세요.
-        </Notice>
+        <Notice tone="error">{L.workspace.updateFailedBody}</Notice>
       ) : (
-        <Notice>
-          콘솔이 재시작되는 동안 RUNE 사용이 일시적으로 중단될 수 있습니다.
-        </Notice>
+        <Notice>{L.workspace.updateRestartNotice}</Notice>
       )}
 
       {!busy &&

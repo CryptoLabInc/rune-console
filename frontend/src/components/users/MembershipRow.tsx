@@ -4,6 +4,7 @@ import TableCell from "@/components/table/TableCell";
 import TableRow from "@/components/table/TableRow";
 import { cn } from "@/utils/cn";
 import type { TDropdownOption } from "@/types/commonTypes";
+import { L } from "@/locales";
 
 const styles = {
   changedBadge:
@@ -46,7 +47,7 @@ const MembershipRow = ({
         <Checkbox
           checked={checked}
           onChange={onCheck}
-          ariaLabel={`${name} 선택`}
+          ariaLabel={L.common.selectName(name)}
         />
       </TableCell>
       <TableCell>
@@ -56,7 +57,10 @@ const MembershipRow = ({
         >
           {name}
           {changed && (
-            <em className={styles.changedBadge} aria-label="변경사항 있음">
+            <em
+              className={styles.changedBadge}
+              aria-label={L.elements.unsavedChanges}
+            >
               CHANGED
             </em>
           )}

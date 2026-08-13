@@ -6,16 +6,22 @@ import Input from "@/components/elements/Input";
 import MemberStatus from "@/components/elements/MemberStatus";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
-import { ROLE_OPTIONS } from "@/components/teams/teamOptions";
+import { EMAIL_PATTERN } from "@/utils/email";
 import {
   isSubmittableUsername,
   normalizeUsernameInput,
   USERNAME_MAX_LENGTH,
   validateUsername,
 } from "@/utils/username";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import {
+  BTN_TEXT,
+  INPUT_LABELS,
+  MODAL_TITLES,
+  PLACEHOLDERS,
+} from "@/constants/commonConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
+import { ROLE_OPTIONS } from "@/constants/teamConstants";
+import { L } from "@/locales";
 
 interface AddMemberModalProps {
   teamName: string;
@@ -56,41 +62,41 @@ const AddMemberModal = ({
       <div className="flex w-full flex-col gap-6">
         <Input
           id="add-member-account"
-          labelText="이메일 (account)"
+          labelText={INPUT_LABELS.emailAccount}
           type="email"
-          placeholder="user@corp.com"
+          placeholder={PLACEHOLDERS.emailExample}
           maxLength={100}
           value={account}
           setValue={setAccount}
-          error={invalidFormat ? "올바른 이메일 형식이 아닙니다." : undefined}
+          error={invalidFormat ? L.teams.invalidEmail : undefined}
         />
         <Input
           id="add-member-username"
-          labelText="사용자 이름 (username)"
-          placeholder="사용자 이름"
+          labelText={INPUT_LABELS.username}
+          placeholder={PLACEHOLDERS.username}
           maxLength={USERNAME_MAX_LENGTH}
           value={username}
           setValue={(value) => setUsername(normalizeUsernameInput(value))}
           error={usernameError}
         />
         <Dropdown
-          label="권한 (role)"
-          placeholder="권한 선택"
+          label={L.teams.roleLabel}
+          placeholder={PLACEHOLDERS.selectRole}
           options={ROLE_OPTIONS}
           value={role}
           onChange={setRole}
         />
         <Notice tone="info">
-          초대받은 사용자가 rune을 연결하면{" "}
+          {L.teams.invitePrefix}
           <MemberStatus
             status="online"
             className="bg-mint/10 h-auto cursor-default gap-1 rounded-sm px-1.5 py-0.5 align-middle"
           />
-          으로 전환됩니다.
+          {L.teams.inviteSuffix}
         </Notice>
         {error && <Notice tone="error">{error}</Notice>}
       </div>
-      <div className="flex w-full gap-2">
+      <div className={MODAL_STYLE_VAR.footer}>
         <Button
           btnText={BTN_TEXT.cancel}
           btnSize="md"

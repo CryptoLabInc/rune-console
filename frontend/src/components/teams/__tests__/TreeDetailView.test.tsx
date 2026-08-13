@@ -7,9 +7,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import TreeDetailView from "@/components/teams/TreeDetailView";
 import * as teamAPIs from "@/api/teamAPIs";
 import * as teamMemberAPIs from "@/api/teamMemberAPIs";
+import { useNoticeStore } from "@/state/store/noticeStore";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import type { TTeamMember, TTeamTree } from "@/types/teamTypes";
-import { useNoticeStore } from "@/stores/noticeStore";
 
 const jsonRes = (body: unknown) =>
   ({ ok: true, json: async () => body }) as unknown as Response;
@@ -435,7 +435,9 @@ describe("TreeDetailView", () => {
     await user.click(screen.getByRole("radio", { name: /팀 내 기억 삭제/ }));
     await user.type(
       screen.getByLabelText("확인 - 삭제할 팀명 입력"),
-      "Platform",
+      // Team names are demo-localized (localizeTeamName) — the confirm input
+      // must match the displayed (Korean, under the test's ko pin) name.
+      "플랫폼",
     );
     /* Two "팀 삭제" buttons exist once the confirm modal opens (the card
        trigger + the modal's confirm) — the confirm one is the last. */
@@ -554,7 +556,6 @@ describe("TreeDetailView", () => {
     vi.spyOn(teamMemberAPIs, "bulkRoleChange").mockResolvedValue(
       jsonRes({ succeeded: ["u_1"], failed: [] }),
     );
-    const showNoticeSpy = vi.spyOn(useNoticeStore.getState(), "showNotice");
     renderView();
     await screen.findByText("김철수");
     await user.click(screen.getByLabelText("kim@corp.com role"));
@@ -563,13 +564,14 @@ describe("TreeDetailView", () => {
       screen.getByRole("button", { name: BTN_TEXT.updateChanges }),
     );
     await user.click(screen.getByRole("button", { name: BTN_TEXT.change }));
-    await waitFor(() =>
-      expect(showNoticeSpy).toHaveBeenCalledWith(
-        MODAL_TITLES.roleChange,
-        "변경사항이 저장되었습니다.",
-        "success",
-      ),
-    );
+    /* SC-06 E-1: the result renders inside the confirm modal; [닫기]
+       alone remains. */
+    expect(
+      await screen.findByText("권한이 변경되었습니다."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: BTN_TEXT.change }),
+    ).not.toBeInTheDocument();
   });
 
   it("resets every staged role pick back to the saved value via 변경사항 초기화", async () => {
@@ -634,7 +636,6 @@ describe("TreeDetailView", () => {
       status: 500,
       json: async () => ({ code: "INTERNAL", message: "x" }),
     } as unknown as Response);
-    const showNoticeSpy = vi.spyOn(useNoticeStore.getState(), "showNotice");
     renderView();
     await screen.findByText("김철수");
     await user.click(screen.getByLabelText("kim@corp.com role"));
@@ -643,13 +644,10 @@ describe("TreeDetailView", () => {
       screen.getByRole("button", { name: BTN_TEXT.updateChanges }),
     );
     await user.click(screen.getByRole("button", { name: BTN_TEXT.change }));
-    await waitFor(() =>
-      expect(showNoticeSpy).toHaveBeenCalledWith(
-        MODAL_TITLES.roleChange,
-        "권한 변경에 실패했습니다.",
-        "error",
-      ),
-    );
+    /* SC-06 E-2: the failure message renders inside the confirm modal. */
+    expect(
+      await screen.findByText("권한 변경에 실패했습니다. 다시 시도해 주세요."),
+    ).toBeInTheDocument();
   });
 
   it("shows a success notice when a full-success member removal completes", async () => {
@@ -710,7 +708,6 @@ describe("TreeDetailView", () => {
       status: 500,
       json: async () => ({ code: "INTERNAL", message: "x" }),
     } as unknown as Response);
-    const showNoticeSpy = vi.spyOn(useNoticeStore.getState(), "showNotice");
     renderView();
     await screen.findByText("김철수");
     await user.click(
@@ -721,13 +718,12 @@ describe("TreeDetailView", () => {
       name: BTN_TEXT.remove,
     });
     await user.click(confirmButtons[confirmButtons.length - 1]);
-    await waitFor(() =>
-      expect(showNoticeSpy).toHaveBeenCalledWith(
-        MODAL_TITLES.removeMembership,
-        "멤버십 제거에 실패했습니다.",
-        "error",
+    /* The remove modal swaps to its in-modal failure view (state B). */
+    expect(
+      await screen.findByText(
+        "멤버십 제거에 실패했습니다. 다시 시도해 주세요.",
       ),
-    );
+    ).toBeInTheDocument();
   });
 
   it("shows the mapped inline error when deleting a childless team hits a server conflict", async () => {
@@ -758,7 +754,9 @@ describe("TreeDetailView", () => {
     await user.click(screen.getByRole("radio", { name: /팀 내 기억 삭제/ }));
     await user.type(
       screen.getByLabelText("확인 - 삭제할 팀명 입력"),
-      "Platform",
+      // Team names are demo-localized (localizeTeamName) — the confirm input
+      // must match the displayed (Korean, under the test's ko pin) name.
+      "플랫폼",
     );
     const confirmButtons = screen.getAllByRole("button", {
       name: BTN_TEXT.deleteTeam,

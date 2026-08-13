@@ -1,3 +1,9 @@
+import type {
+  INVITATION_STATUS,
+  SESSION_STATUS,
+  TEAM_MEMBER_ROLE,
+} from "@/constants/apiConstants";
+
 export type TTeamNode = {
   id: string;
   name: string;
@@ -9,15 +15,27 @@ export type TTeamNode = {
 
 export type TTeamTree = TTeamNode[];
 
-/** Grantable member role (Admin is console-account only — API §0). */
-export type TTeamMemberRole = "edit" | "write" | "read";
+/** Recursive team-tree node the tree/org views consume (UIKIT
+    AdminTeamNode, wireframe SC-06) — built client-side from the flat
+    TTeamTree. Distinct from TTeamNode, the flat wire row above. */
+export type TTeamViewNode = {
+  id: string;
+  name: string;
+  members: number;
+  children?: TTeamViewNode[];
+};
 
-/** Invitation-code lifecycle status on the wire (common contract). */
+/** Grantable member role — derived from TEAM_MEMBER_ROLE (single source). */
+export type TTeamMemberRole =
+  (typeof TEAM_MEMBER_ROLE)[keyof typeof TEAM_MEMBER_ROLE];
+
+/** Invitation-code lifecycle status — derived from INVITATION_STATUS. */
 export type TInvitationStatus =
-  "invite_pending" | "invite_expired" | "invite_redeemed";
+  (typeof INVITATION_STATUS)[keyof typeof INVITATION_STATUS];
 
-/** Session-token liveness on the wire (common contract). */
-export type TSessionStatus = "online" | "offline";
+/** Session-token liveness — derived from SESSION_STATUS. */
+export type TSessionStatus =
+  (typeof SESSION_STATUS)[keyof typeof SESSION_STATUS];
 
 /** GET /teams/{id} detail. */
 export type TTeamDetail = {
