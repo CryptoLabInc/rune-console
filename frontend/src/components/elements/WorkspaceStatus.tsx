@@ -1,6 +1,6 @@
 import { cn } from "@/utils/cn";
 import { WORKSPACE_STATUS_VAR } from "@/constants/styleConstants";
-import type { TWorkspaceStatus } from "@/types/commonTypes";
+import type { TWorkspaceStatus } from "@/types/workspaceTypes";
 
 interface WorkspaceStatusProps {
   status: TWorkspaceStatus;
@@ -14,7 +14,11 @@ interface WorkspaceStatusProps {
  * voice), ported from UIKIT StorageStatus. Display-only by default;
  * pass onClick to render it as an interactive button.
  */
-const WorkspaceStatus = ({ status, onClick, className }: WorkspaceStatusProps) => {
+const WorkspaceStatus = ({
+  status,
+  onClick,
+  className,
+}: WorkspaceStatusProps) => {
   const classes = cn(
     "text-tag inline-flex h-[26px] w-fit cursor-pointer items-center rounded-full border border-current px-2 whitespace-nowrap",
     WORKSPACE_STATUS_VAR[status].color,

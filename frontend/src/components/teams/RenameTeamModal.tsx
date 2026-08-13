@@ -4,9 +4,13 @@ import Button from "@/components/elements/Button";
 import Input from "@/components/elements/Input";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
-import { TEAM_NAME_PATTERN } from "@/components/teams/teamOptions";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
-import { L } from "@/locales";
+import { TEAM_NAME_DUPLICATE_TEXT } from "@/constants/errorConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
+import {
+  TEAM_NAME_PATTERN,
+  TEAM_NAME_RULE_TEXT,
+} from "@/constants/teamConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 
 interface RenameTeamModalProps {
@@ -54,26 +58,26 @@ const RenameTeamModal = ({
     trimmed.length > 0 && isChanged && !isInvalidFormat && !isDuplicate;
 
   const nameError = isInvalidFormat
-    ? L.teams.teamNameRule
+    ? TEAM_NAME_RULE_TEXT
     : isDuplicate
-      ? L.teams.dupName
+      ? TEAM_NAME_DUPLICATE_TEXT
       : undefined;
 
   return (
     <ModalLayout title={MODAL_TITLES.renameTeam} isOpen>
-      <div className="flex w-full flex-col gap-5">
+      <div className={MODAL_STYLE_VAR.body}>
         <Input
           id="rename-team-name"
-          labelText={L.teams.teamName}
+          labelText="팀 이름"
           maxLength={50}
           value={name}
           setValue={setName}
-          hint={L.teams.teamNameRule}
+          hint={TEAM_NAME_RULE_TEXT}
           error={nameError}
         />
         {error && <Notice tone="error">{error}</Notice>}
       </div>
-      <div className="flex w-full gap-2">
+      <div className={MODAL_STYLE_VAR.footer}>
         <Button
           btnText={BTN_TEXT.cancel}
           btnSize="md"

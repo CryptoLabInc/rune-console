@@ -6,19 +6,23 @@
 
 const KST_TIME_ZONE = "Asia/Seoul";
 
+/* Constructed once at module load — Intl.DateTimeFormat construction is
+   one of the costlier Intl operations and these run in every table cell
+   on every render; the options never change. */
+const KST_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  timeZone: KST_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
 /** Break an ISO instant into zero-padded KST calendar parts. */
 const kstParts = (iso: string): Record<string, string> => {
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: KST_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  });
   const parts: Record<string, string> = {};
-  for (const { type, value } of formatter.formatToParts(new Date(iso))) {
+  for (const { type, value } of KST_FORMATTER.formatToParts(new Date(iso))) {
     parts[type] = value;
   }
   return parts;

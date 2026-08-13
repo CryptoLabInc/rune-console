@@ -1,8 +1,8 @@
 import Button from "@/components/elements/Button";
 import ModalLayout from "@/components/layout/ModalLayout";
+import { useNoticeStore } from "@/state/store/noticeStore";
 import { cn } from "@/utils/cn";
 import { BTN_TEXT } from "@/constants/commonConstants";
-import { useNoticeStore } from "@/stores/noticeStore";
 
 /**
  * NoticeModal is the shared blocking result-notice modal. The title names

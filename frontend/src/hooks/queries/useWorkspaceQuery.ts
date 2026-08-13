@@ -1,22 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { getWorkspace } from "@/api/workspaceAPIs";
+import { WORKSPACE_STATUS } from "@/constants/apiConstants";
 import { QUERY_KEYS } from "@/constants/commonConstants";
 import type {
-  TWorkspaceStatus,
   TWorkspace,
+  TWorkspaceStatus,
   TWorkspaceWire,
-} from "@/types/commonTypes";
+} from "@/types/workspaceTypes";
 
 /** How often to re-poll GET /workspace while a phase is mid-transition. */
 const POLL_MS = 10000;
 
 /** Phases mid-transition — the query keeps polling while the workspace sits here. */
 export const isTransitionalStatus = (status: TWorkspaceStatus): boolean =>
-  status === "provisioning" ||
-  status === "stopping" ||
-  status === "starting" ||
-  status === "deleting";
+  status === WORKSPACE_STATUS.provisioning ||
+  status === WORKSPACE_STATUS.stopping ||
+  status === WORKSPACE_STATUS.starting ||
+  status === WORKSPACE_STATUS.deleting;
 
 /**
  * useWorkspaceQuery reads the singular workspace (SC-02). A 404 means "no

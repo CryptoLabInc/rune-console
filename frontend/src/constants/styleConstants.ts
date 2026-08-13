@@ -3,7 +3,12 @@
  * Visual values are translated from UIKIT modules/rune-ui-buttons and
  * modules/rune-admin-kit CSS — UIKIT is the design source of truth.
  */
-import { L } from "@/locales";
+import type { TMemberStatus } from "@/types/commonTypes";
+import type { TInvitationStatus } from "@/types/teamTypes";
+import type { TWorkspaceStatus } from "@/types/workspaceTypes";
+
+/** Status → chip/badge presentation (label + text color). */
+type TStatusStyle = { label: string; color: string };
 
 /* Form controls embed w-full: the parent container constrains width.
    Metrics are UIKIT values normalized to even px (project rule). */
@@ -80,40 +85,41 @@ export const BADGE_TONE_VAR = {
   neutral: "bg-muted-foreground/12 text-muted-foreground",
 } as const;
 
-/* Status labels come from the locale table (src/locales); colors are style
-   concerns and stay here. `label` is a getter so it re-resolves against the
-   active language on every read — a live language switch (LocaleProvider
-   re-renders in place) updates the chip text without a reload. Capturing
-   `L.status.*` as a plain value would freeze it at module-eval time. */
-const statusVar = (label: () => string, color: string) => ({
-  get label() {
-    return label();
-  },
-  color,
-});
+/* Shared modal building blocks — the ModalLayout children every confirm
+   modal composes. One source so the copies can't drift (the body gap had
+   already split into gap-4 vs gap-5 before this was centralized). */
+export const MODAL_STYLE_VAR = {
+  /* Centered single-line message (alert/failure bodies). */
+  message: "text-center text-base",
+  /* Vertical form/content stack. */
+  body: "flex w-full flex-col gap-4",
+  /* Button row — one spacing for every confirm modal (the team/workspace
+     modals used to sit at gap-2 while the users flows used gap-4; unified
+     on gap-4, 2026-08-03). */
+  footer: "flex w-full items-center gap-4",
+} as const;
 
-/* Session chips — the only status a list view shows. */
+/* Session chips — the only status a list view shows. The satisfies clause
+   keys this map to the status union: adding/renaming a status value is a
+   compile error here until the label map follows. */
 export const MEMBER_STATUS_VAR = {
-  online: statusVar(() => L.status.member.online, "text-mint"),
-  offline: statusVar(() => L.status.member.offline, "text-faint"),
-};
+  online: { label: "온라인", color: "text-mint" },
+  offline: { label: "오프라인", color: "text-faint" },
+} as const satisfies Record<TMemberStatus, TStatusStyle>;
 
 /* Invitation-status labels — shown only in the member detail drawer. */
 export const INVITATION_STATUS_VAR = {
-  invite_pending: statusVar(() => L.status.invitation.pending, "text-warning"),
-  invite_expired: statusVar(() => L.status.invitation.expired, "text-faint"),
-  invite_redeemed: statusVar(
-    () => L.status.invitation.redeemed,
-    "text-accent-blue",
-  ),
-};
+  invite_pending: { label: "초대 수락 대기", color: "text-warning" },
+  invite_expired: { label: "초대 코드 만료", color: "text-faint" },
+  invite_redeemed: { label: "초대 코드 사용됨", color: "text-accent-blue" },
+} as const satisfies Record<TInvitationStatus, TStatusStyle>;
 
 export const WORKSPACE_STATUS_VAR = {
-  provisioning: statusVar(() => L.status.workspace.provisioning, "text-warning"),
-  running: statusVar(() => L.status.workspace.running, "text-mint"),
-  stopping: statusVar(() => L.status.workspace.stopping, "text-warning"),
-  stopped: statusVar(() => L.status.workspace.stopped, "text-faint"),
-  starting: statusVar(() => L.status.workspace.starting, "text-warning"),
-  deleting: statusVar(() => L.status.workspace.deleting, "text-warning"),
-  error: statusVar(() => L.status.workspace.error, "text-negative"),
-};
+  provisioning: { label: "생성 중", color: "text-warning" },
+  running: { label: "실행 중", color: "text-mint" },
+  stopping: { label: "정지 중", color: "text-warning" },
+  stopped: { label: "정지", color: "text-faint" },
+  starting: { label: "재실행 중", color: "text-warning" },
+  deleting: { label: "삭제 중", color: "text-warning" },
+  error: { label: "사용 불가", color: "text-negative" },
+} as const satisfies Record<TWorkspaceStatus, TStatusStyle>;

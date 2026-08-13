@@ -6,17 +6,25 @@ import Input from "@/components/elements/Input";
 import MemberStatus from "@/components/elements/MemberStatus";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
-import { buildTeamOptions, ROLE_OPTIONS } from "@/components/teams/teamOptions";
-import { buildInvitePreview } from "@/components/users/invitePreview";
 import ModalTable from "@/components/users/ModalTable";
+import { buildTeamOptions } from "@/utils/buildTeamOptions";
+import { EMAIL_FORMAT_ERROR, EMAIL_PATTERN } from "@/utils/email";
+import { buildInvitePreview } from "@/utils/invitePreview";
 import {
   isSubmittableUsername,
   normalizeUsernameInput,
   USERNAME_MAX_LENGTH,
   validateUsername,
 } from "@/utils/username";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
-import { L } from "@/locales";
+import {
+  BTN_TEXT,
+  INPUT_LABELS,
+  MODAL_TITLES,
+  PLACEHOLDERS,
+  TABLE_HEADERS,
+} from "@/constants/commonConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
+import { ROLE_OPTIONS } from "@/constants/teamConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 import type { TInvitePayload, TInviteResult } from "@/types/userTypes";
 
@@ -28,9 +36,9 @@ const styles = {
   removeSlot: "w-9 flex-none",
 };
 
-/** Complete email format — validated on blur (SC-12 no.1). */
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+const DUPLICATE_ACCOUNT_ERROR =
+  "이미 등록된 계정입니다. 멤버 추가 또는 초대 코드 재전송을 사용하세요.";
+const SEND_FAILED_MESSAGE = "초대 전송에 실패했습니다. 다시 시도해 주세요.";
 
 /** One editable team/role set row; id keys the row across removals. */
 type TSetDraft = { id: number; teamId: string; role: string };
@@ -85,7 +93,7 @@ const InviteMemberModal = ({
 
   const validateEmail = () => {
     if (email.trim() && !EMAIL_PATTERN.test(email.trim()))
-      setEmailError(L.members.emailFormatError);
+      setEmailError(EMAIL_FORMAT_ERROR);
   };
 
   /** Team options for one set — sourced from the real team tree (GET
@@ -129,7 +137,7 @@ const InviteMemberModal = ({
       });
       if (result === "success") onClose();
       else if (result === "duplicate-account")
-        setEmailError(L.members.duplicateAccount);
+        setEmailError(DUPLICATE_ACCOUNT_ERROR);
       else setSendFailed(true);
     } catch {
       setSendFailed(true);
@@ -144,8 +152,8 @@ const InviteMemberModal = ({
         <Input
           id="invite-email"
           type="email"
-          labelText={L.teams.emailLabel}
-          placeholder="user@corp.com"
+          labelText={INPUT_LABELS.emailAccount}
+          placeholder={PLACEHOLDERS.emailExample}
           maxLength={100}
           value={email}
           setValue={(value) => {
@@ -158,8 +166,8 @@ const InviteMemberModal = ({
 
         <Input
           id="invite-username"
-          labelText={L.teams.usernameLabel}
-          placeholder={L.teams.usernamePlaceholder}
+          labelText={INPUT_LABELS.username}
+          placeholder={PLACEHOLDERS.username}
           maxLength={USERNAME_MAX_LENGTH}
           value={username}
           setValue={(value) => setUsername(normalizeUsernameInput(value))}
@@ -167,25 +175,25 @@ const InviteMemberModal = ({
         />
 
         <div className="flex flex-col gap-2">
-          <span className={styles.fieldLabel}>{L.members.teamRole}</span>
+          <span className={styles.fieldLabel}>팀 / 권한</span>
           {sets.map((set, index) => (
             <div key={set.id} className={styles.setRow}>
               <div className={styles.teamSlot}>
                 <Dropdown
                   options={teamOptionsFor(set.id)}
-                  placeholder={L.members.selectTeam}
+                  placeholder={PLACEHOLDERS.selectTeam}
                   value={set.teamId}
                   onChange={(teamId) => patchSet(set.id, { teamId })}
-                  ariaLabel={L.members.setTeamAria(index + 1)}
+                  ariaLabel={`세트 ${index + 1} 팀`}
                 />
               </div>
               <div className={styles.roleSlot}>
                 <Dropdown
                   options={ROLE_OPTIONS}
-                  placeholder={L.members.selectRole}
+                  placeholder={PLACEHOLDERS.selectRole}
                   value={set.role}
                   onChange={(role) => patchSet(set.id, { role })}
-                  ariaLabel={L.members.setRoleAria(index + 1)}
+                  ariaLabel={`세트 ${index + 1} role`}
                 />
               </div>
               {/* First set is required and carries no remove button
@@ -216,9 +224,13 @@ const InviteMemberModal = ({
 
         {showPreview && (
           <div className="flex flex-col gap-2">
-            <span className={styles.fieldLabel}>{L.members.subteamPreview}</span>
+            <span className={styles.fieldLabel}>하위 팀 권한 미리보기</span>
             <ModalTable
-              head={[L.common.team, L.common.role, L.members.reason]}
+              head={[
+                TABLE_HEADERS.team,
+                TABLE_HEADERS.role,
+                TABLE_HEADERS.reason,
+              ]}
               rows={previewRows.map((row) => [
                 row.indent ? `└ ${row.teamName}` : row.teamName,
                 row.role,
@@ -229,20 +241,22 @@ const InviteMemberModal = ({
         )}
 
         {sendFailed ? (
-          <Notice tone="error">{L.members.sendFailed}</Notice>
+          <Notice tone="error">{SEND_FAILED_MESSAGE}</Notice>
         ) : (
           <Notice>
-            {L.members.invitePrefix}
+            초대 시 사용자에게 초대 코드가 발송되어 사용자가 24시간 내 rune을
+            연결하면{" "}
             <MemberStatus
               status="online"
               className="h-auto cursor-default p-0 align-middle"
-            />
-            {L.members.inviteSuffix} <br /> {L.members.inviteExpiry}
+            />{" "}
+            으로 전환됩니다. <br /> 미연결 시 코드가 만료되고 초대 코드
+            재전송으로 사용자를 다시 초대할 수 있습니다.
           </Notice>
         )}
       </div>
 
-      <div className="flex w-full items-center gap-4">
+      <div className={MODAL_STYLE_VAR.footer}>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"

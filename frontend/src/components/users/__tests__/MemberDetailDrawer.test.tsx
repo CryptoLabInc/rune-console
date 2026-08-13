@@ -3,11 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import MemberDetailDrawer from "@/components/users/MemberDetailDrawer";
+import { useNoticeStore } from "@/state/store/noticeStore";
+import { formatDate, formatDateTime } from "@/utils/formatDate";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import type { TBatchResult, TTeamTree } from "@/types/teamTypes";
 import type { TUserListItem } from "@/types/userTypes";
-import { formatDate, formatDateTime } from "@/utils/formatDate";
-import { useNoticeStore } from "@/stores/noticeStore";
 
 /** Minimal team fixture — matches the user's one membership plus a
     second, unjoined team for the add picker. */
@@ -71,9 +71,7 @@ describe("MemberDetailDrawer", () => {
     render(<MemberDetailDrawer {...baseProps()} />);
     /* Header shows the display name as the title and the account (the
        identifier) right below it. */
-    expect(
-      screen.getByRole("heading", { name: "김철수" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "김철수" })).toBeInTheDocument();
     expect(screen.getByText("k@corp.com")).toBeInTheDocument();
     expect(screen.getByText("백엔드")).toBeInTheDocument();
   });
@@ -105,6 +103,43 @@ describe("MemberDetailDrawer", () => {
     expect(dashes.length).toBeGreaterThanOrEqual(2);
   });
 
+  it("renders refetched memberships from props and keeps staged edits on top", async () => {
+    const user = userEvent.setup();
+    const props = baseProps();
+    const { rerender } = render(<MemberDetailDrawer {...props} />);
+
+    /* Stage a role pick before the fresher server payload lands. */
+    await user.click(screen.getByRole("button", { name: "백엔드 role" }));
+    await user.click(screen.getByRole("option", { name: "write" }));
+
+    /* The detail query (or a post-mutation refetch) resolves with an
+       extra membership — the drawer must render it without a remount. */
+    rerender(
+      <MemberDetailDrawer
+        {...props}
+        user={{
+          ...USER,
+          memberships: [
+            ...USER.memberships,
+            { teamId: "t_d", teamName: "디자인", role: "read" },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("소속 팀 (2)")).toBeInTheDocument();
+    expect(screen.getByText("디자인")).toBeInTheDocument();
+
+    /* The staged (unapplied) pick survives the refetch: the 백엔드 row
+       still shows write and the update button stays armed. */
+    expect(
+      screen.getByRole("button", { name: "백엔드 role" }),
+    ).toHaveTextContent("write");
+    expect(
+      screen.getByRole("button", { name: BTN_TEXT.updateChanges }),
+    ).toBeEnabled();
+  });
+
   it("stages a role change, confirms, and calls onUpdateRoles with {updates}", async () => {
     const user = userEvent.setup();
     const props = baseProps();
@@ -133,17 +168,17 @@ describe("MemberDetailDrawer", () => {
 
     await user.click(screen.getByRole("button", { name: "백엔드 role" }));
     await user.click(screen.getByRole("option", { name: "write" }));
-    expect(screen.getByRole("button", { name: "백엔드 role" })).toHaveTextContent(
-      "write",
-    );
+    expect(
+      screen.getByRole("button", { name: "백엔드 role" }),
+    ).toHaveTextContent("write");
     await user.click(reset);
 
     /* The staged pick is gone: the dropdown shows the saved role again
        and both staged-change buttons drop back to disabled. Reset is
        purely client-side staging — no batch call fires. */
-    expect(screen.getByRole("button", { name: "백엔드 role" })).toHaveTextContent(
-      "edit",
-    );
+    expect(
+      screen.getByRole("button", { name: "백엔드 role" }),
+    ).toHaveTextContent("edit");
     expect(reset).toBeDisabled();
     expect(
       screen.getByRole("button", { name: BTN_TEXT.updateChanges }),

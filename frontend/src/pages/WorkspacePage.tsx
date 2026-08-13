@@ -8,9 +8,9 @@ import {
   isTransitionalStatus,
   useWorkspaceQuery,
 } from "@/hooks/queries/useWorkspaceQuery";
-import { PATH_LIST } from "@/constants/commonConstants";
-import { L } from "@/locales";
-import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { useWorkspaceStore } from "@/state/store/workspaceStore";
+import { WORKSPACE_STATUS } from "@/constants/apiConstants";
+import { PAGE_TITLES, PATH_LIST } from "@/constants/commonConstants";
 
 const panelClass =
   "m-6 flex min-h-[340px] flex-col items-center justify-center gap-3 text-center";
@@ -42,7 +42,7 @@ const WorkspacePage = () => {
   const [createdHere, setCreatedHere] = useState(false);
 
   useEffect(() => {
-    if (workspace?.status === "running" && createdHere) {
+    if (workspace?.status === WORKSPACE_STATUS.running && createdHere) {
       setCreatedHere(false);
       openModal();
     }
@@ -63,7 +63,7 @@ const WorkspacePage = () => {
   const exists = workspace != null;
   const transitional = exists && isTransitionalStatus(workspace.status);
 
-  if (isLoading) return <section aria-label={L.workspace.pageAria} />;
+  if (isLoading) return <section aria-label={PAGE_TITLES.workspace} />;
 
   /* A workspace exists → go to the console. The one exception is our own
      create still provisioning: stay and keep the spinner until it runs. */
@@ -85,29 +85,29 @@ const WorkspacePage = () => {
     transitional;
 
   return (
-    <section aria-label={L.workspace.pageAria}>
+    <section aria-label={PAGE_TITLES.workspace}>
       {creating ? (
         <Feedback
           state="loading"
-          title={L.workspace.creatingTitle}
-          description={L.workspace.creatingDesc}
+          title="워크스페이스를 생성하는 중입니다…"
+          description="생성까지 약 3~5분 정도 소요됩니다."
           className={panelClass}
         />
       ) : createMutation.isError ? (
         <Feedback
           state="error"
-          title={L.workspace.createFailedTitle}
-          description={L.workspace.createFailedDesc}
+          title="워크스페이스 생성 실패"
+          description="워크스페이스를 생성할 수 없습니다. 다시 시도해 주세요."
           className={panelClass}
-          action={createButton(L.workspace.createWorkspace, handleCreate)}
+          action={createButton("워크스페이스 생성", handleCreate)}
         />
       ) : (
         <Feedback
           state="empty"
-          title={L.workspace.emptyTitle}
-          description={L.workspace.emptyDesc}
+          title="생성된 워크스페이스가 없습니다."
+          description="워크스페이스를 생성하면 기억(memory)을 저장할 수 있습니다."
           className={panelClass}
-          action={createButton(L.workspace.createWorkspace, handleCreate)}
+          action={createButton("워크스페이스 생성", handleCreate)}
         />
       )}
     </section>
