@@ -80,31 +80,40 @@ export const BADGE_TONE_VAR = {
   neutral: "bg-muted-foreground/12 text-muted-foreground",
 } as const;
 
-/* Status labels come from the locale table (src/locales, chosen once at page
-   load); colors are style concerns and stay here. */
+/* Status labels come from the locale table (src/locales); colors are style
+   concerns and stay here. `label` is a getter so it re-resolves against the
+   active language on every read — a live language switch (LocaleProvider
+   re-renders in place) updates the chip text without a reload. Capturing
+   `L.status.*` as a plain value would freeze it at module-eval time. */
+const statusVar = (label: () => string, color: string) => ({
+  get label() {
+    return label();
+  },
+  color,
+});
 
 /* Session chips — the only status a list view shows. */
 export const MEMBER_STATUS_VAR = {
-  online: { label: L.status.member.online, color: "text-mint" },
-  offline: { label: L.status.member.offline, color: "text-faint" },
-} as const;
+  online: statusVar(() => L.status.member.online, "text-mint"),
+  offline: statusVar(() => L.status.member.offline, "text-faint"),
+};
 
 /* Invitation-status labels — shown only in the member detail drawer. */
 export const INVITATION_STATUS_VAR = {
-  invite_pending: { label: L.status.invitation.pending, color: "text-warning" },
-  invite_expired: { label: L.status.invitation.expired, color: "text-faint" },
-  invite_redeemed: {
-    label: L.status.invitation.redeemed,
-    color: "text-accent-blue",
-  },
-} as const;
+  invite_pending: statusVar(() => L.status.invitation.pending, "text-warning"),
+  invite_expired: statusVar(() => L.status.invitation.expired, "text-faint"),
+  invite_redeemed: statusVar(
+    () => L.status.invitation.redeemed,
+    "text-accent-blue",
+  ),
+};
 
 export const WORKSPACE_STATUS_VAR = {
-  provisioning: { label: L.status.workspace.provisioning, color: "text-warning" },
-  running: { label: L.status.workspace.running, color: "text-mint" },
-  stopping: { label: L.status.workspace.stopping, color: "text-warning" },
-  stopped: { label: L.status.workspace.stopped, color: "text-faint" },
-  starting: { label: L.status.workspace.starting, color: "text-warning" },
-  deleting: { label: L.status.workspace.deleting, color: "text-warning" },
-  error: { label: L.status.workspace.error, color: "text-negative" },
-} as const;
+  provisioning: statusVar(() => L.status.workspace.provisioning, "text-warning"),
+  running: statusVar(() => L.status.workspace.running, "text-mint"),
+  stopping: statusVar(() => L.status.workspace.stopping, "text-warning"),
+  stopped: statusVar(() => L.status.workspace.stopped, "text-faint"),
+  starting: statusVar(() => L.status.workspace.starting, "text-warning"),
+  deleting: statusVar(() => L.status.workspace.deleting, "text-warning"),
+  error: statusVar(() => L.status.workspace.error, "text-negative"),
+};

@@ -31,9 +31,6 @@ const styles = {
 /** Complete email format — validated on blur (SC-12 no.1). */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const EMAIL_FORMAT_ERROR = L.members.emailFormatError;
-const DUPLICATE_ACCOUNT_ERROR = L.members.duplicateAccount;
-const SEND_FAILED_MESSAGE = L.members.sendFailed;
 
 /** One editable team/role set row; id keys the row across removals. */
 type TSetDraft = { id: number; teamId: string; role: string };
@@ -88,7 +85,7 @@ const InviteMemberModal = ({
 
   const validateEmail = () => {
     if (email.trim() && !EMAIL_PATTERN.test(email.trim()))
-      setEmailError(EMAIL_FORMAT_ERROR);
+      setEmailError(L.members.emailFormatError);
   };
 
   /** Team options for one set — sourced from the real team tree (GET
@@ -132,7 +129,7 @@ const InviteMemberModal = ({
       });
       if (result === "success") onClose();
       else if (result === "duplicate-account")
-        setEmailError(DUPLICATE_ACCOUNT_ERROR);
+        setEmailError(L.members.duplicateAccount);
       else setSendFailed(true);
     } catch {
       setSendFailed(true);
@@ -232,7 +229,7 @@ const InviteMemberModal = ({
         )}
 
         {sendFailed ? (
-          <Notice tone="error">{SEND_FAILED_MESSAGE}</Notice>
+          <Notice tone="error">{L.members.sendFailed}</Notice>
         ) : (
           <Notice>
             {L.members.invitePrefix}

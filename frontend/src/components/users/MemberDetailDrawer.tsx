@@ -76,15 +76,16 @@ type TDrawerModal =
   | "cancel-invitation"
   | null;
 
-/** Batch-endpoint failure reasons shown by team name (SC-13 — shared
-    with the team-side codes; the drawer only ever sees these two). */
-const BATCH_REASON: Record<string, string> = {
-  TEAM_NOT_FOUND: L.members.teamNotFound,
-  NOT_TEAM_MEMBER: L.teams.notTeamMember,
-};
-// Any other code (e.g. a transient INTERNAL) shows a generic retry message
-// rather than leaking the raw backend code into the failure modal.
-const BATCH_REASON_FALLBACK = L.common.processFailed;
+/** Batch-endpoint failure reason for a code, resolved against the active
+    language on each call (SC-13 — shared with the team-side codes; the drawer
+    only ever sees these two). Any other code (e.g. a transient INTERNAL) shows
+    a generic retry message rather than leaking the raw backend code. Read live
+    — a module-const map would freeze the copy at import time. */
+const batchReason = (code: string): string =>
+  ({
+    TEAM_NOT_FOUND: L.members.teamNotFound,
+    NOT_TEAM_MEMBER: L.teams.notTeamMember,
+  })[code] ?? L.common.processFailed;
 
 interface MemberDetailDrawerProps {
   user: TUserListItem;
@@ -500,7 +501,7 @@ const MemberDetailDrawer = ({
                   account:
                     memberships.find((m) => m.teamId === f.id)?.teamName ??
                     f.id,
-                  reason: BATCH_REASON[f.code] ?? BATCH_REASON_FALLBACK,
+                  reason: batchReason(f.code),
                 })),
               );
             }
@@ -540,7 +541,7 @@ const MemberDetailDrawer = ({
                   account:
                     memberships.find((m) => m.teamId === f.id)?.teamName ??
                     f.id,
-                  reason: BATCH_REASON[f.code] ?? BATCH_REASON_FALLBACK,
+                  reason: batchReason(f.code),
                 })),
               );
             }

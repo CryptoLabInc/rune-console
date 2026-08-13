@@ -1,11 +1,12 @@
-import { L } from "@/locales";
 import type { TDropdownOption } from "@/types/commonTypes";
 import type { TTeamTree } from "@/types/teamTypes";
 
 /** Team name rule: digits, Hangul, Latin letters, and - _ only. */
 export const TEAM_NAME_PATTERN = /^[0-9A-Za-z가-힣_-]+$/;
 
-export const TEAM_NAME_RULE_TEXT = L.teams.teamNameRule;
+/* The rule hint text (L.teams.teamNameRule) is read inline at each call site
+   so it re-resolves on a live language switch — a module const would freeze
+   it at import time. */
 
 /** Grantable member roles (Admin is console-account only — API §0). */
 export const ROLE_OPTIONS: TDropdownOption[] = [

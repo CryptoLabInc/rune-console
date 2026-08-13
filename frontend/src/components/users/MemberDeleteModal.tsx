@@ -7,7 +7,6 @@ import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import { L } from "@/locales";
 import type { TMemberDeleteTarget } from "@/types/userTypes";
 
-const DELETE_FAILED_MESSAGE = L.members.deleteFailed;
 
 /** The team/role table, or the empty-state line when the target belongs
     to no team (no group-role membership). */
@@ -72,7 +71,7 @@ const MemberDeleteModal = ({
   if (failed) {
     return (
       <ModalLayout title={title} isOpen>
-        <p className="text-center text-base">{DELETE_FAILED_MESSAGE}</p>
+        <p className="text-center text-base">{L.members.deleteFailed}</p>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"

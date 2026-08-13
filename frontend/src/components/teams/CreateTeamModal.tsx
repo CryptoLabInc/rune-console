@@ -8,7 +8,6 @@ import ModalLayout from "@/components/layout/ModalLayout";
 import {
   buildTeamOptions,
   TEAM_NAME_PATTERN,
-  TEAM_NAME_RULE_TEXT,
 } from "@/components/teams/teamOptions";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import { L } from "@/locales";
@@ -50,7 +49,7 @@ const CreateTeamModal = ({
   const canSubmit = trimmed.length > 0 && !isInvalidFormat && !isDuplicate;
 
   const nameError = isInvalidFormat
-    ? TEAM_NAME_RULE_TEXT
+    ? L.teams.teamNameRule
     : trimmed && isDuplicate
       ? L.teams.dupName
       : undefined;
@@ -65,7 +64,7 @@ const CreateTeamModal = ({
           maxLength={50}
           value={name}
           setValue={setName}
-          hint={TEAM_NAME_RULE_TEXT}
+          hint={L.teams.teamNameRule}
           error={nameError}
         />
         <Dropdown
