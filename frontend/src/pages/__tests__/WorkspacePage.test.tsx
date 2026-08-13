@@ -3,8 +3,8 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import WorkspacePage from "@/pages/WorkspacePage";
-import type { TWorkspace } from "@/types/commonTypes";
-import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { useWorkspaceStore } from "@/state/store/workspaceStore";
+import type { TWorkspace } from "@/types/workspaceTypes";
 
 /* Server state is mocked; the page renders only while no workspace exists
    (query → null), which is exactly the post-teardown handoff situation. */
@@ -70,8 +70,6 @@ describe("WorkspacePage", () => {
     expect(
       screen.getByText(/워크스페이스를 생성하는 중입니다/),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByText("생성된 워크스페이스가 없습니다."),
-    ).toBeNull();
+    expect(screen.queryByText("생성된 워크스페이스가 없습니다.")).toBeNull();
   });
 });

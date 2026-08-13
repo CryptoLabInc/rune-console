@@ -16,14 +16,20 @@ import {
   isTransitionalStatus,
   useWorkspaceQuery,
 } from "@/hooks/queries/useWorkspaceQuery";
+import { useWorkspaceStore } from "@/state/store/workspaceStore";
+import { WORKSPACE_STATUS } from "@/constants/apiConstants";
 import {
   BTN_TEXT,
   MODAL_TITLES,
   PATH_LIST,
   WORKSPACE_MAX_MEMORIES,
 } from "@/constants/commonConstants";
-import { L } from "@/locales";
-import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
+
+const FAIL_COPY = {
+  stop: "워크스페이스 중지에 실패했습니다. 다시 시도해 주세요.",
+  restart: "워크스페이스 재실행에 실패했습니다. 다시 시도해 주세요.",
+} as const;
 
 const styles = {
   field: "flex items-center justify-between gap-4",
@@ -67,7 +73,7 @@ const WorkspaceModal = () => {
   // connect endpoint the empty-state create uses.
   const reconnectMutation = useCreateWorkspaceMutation();
 
-  const status = workspace?.status ?? "error";
+  const status = workspace?.status ?? WORKSPACE_STATUS.error;
   /* Transitional phases (+ any request in flight) lock the actions. */
   const busy = workspace ? isTransitionalStatus(status) : false;
 
@@ -87,7 +93,7 @@ const WorkspaceModal = () => {
     return (
       <ModalLayout title={MODAL_TITLES.workspaceOrphaned} isOpen>
         <p className="text-negative text-center text-base">
-          {L.workspace.recreateFailed}
+          워크스페이스 재생성에 실패했습니다. 다시 시도해 주세요.
         </p>
         {closeButton}
       </ModalLayout>
@@ -100,7 +106,7 @@ const WorkspaceModal = () => {
       return (
         <ModalLayout title={MODAL_TITLES.workspaceDelete} isOpen>
           <p className="text-negative text-center text-base">
-            {L.workspace.deleteFailed}
+            워크스페이스 삭제에 실패했습니다. 다시 시도해 주세요.
           </p>
           {closeButton}
         </ModalLayout>
@@ -108,12 +114,12 @@ const WorkspaceModal = () => {
     }
     return (
       <ModalLayout title={MODAL_TITLES.workspaceDelete} isOpen>
-        <p className="text-center text-base">
-          {L.workspace.deleteConfirm}
+        <p className={MODAL_STYLE_VAR.message}>
+          워크스페이스를 삭제하시겠습니까?
           <br />
-          {L.workspace.deleteIrreversible}
+          삭제 후에는 되돌릴 수 없습니다.
         </p>
-        <div className="flex w-full gap-2">
+        <div className={MODAL_STYLE_VAR.footer}>
           <Button
             btnText={BTN_TEXT.close}
             btnSize="md"
@@ -151,21 +157,21 @@ const WorkspaceModal = () => {
     return (
       <ModalLayout title={MODAL_TITLES.workspaceOrphaned} isOpen>
         {tearingDown ? (
-          <p className="text-center text-base">
-            {L.workspace.tearingDown1}
+          <p className={MODAL_STYLE_VAR.message}>
+            기존 워크스페이스를 삭제하는 중입니다…
             <br />
-            {L.workspace.tearingDown2}
+            삭제가 완료되면 워크스페이스 생성을 시작합니다.
           </p>
         ) : (
-          <p className="text-center text-base">
-            {L.workspace.orphaned1}
+          <p className={MODAL_STYLE_VAR.message}>
+            콘솔이 재설치되어 이 워크스페이스와 연결할 수 없습니다.
             <br />
-            {L.workspace.orphaned2}
+            기존에 저장된 데이터는 이전 보안 키로 암호화되어 복구할 수 없습니다.
             <br />
-            {L.workspace.orphaned3}
+            삭제 후 재생성하면 빈 워크스페이스로 다시 시작합니다.
           </p>
         )}
-        <div className="flex w-full gap-2">
+        <div className={MODAL_STYLE_VAR.footer}>
           <Button
             btnText={BTN_TEXT.close}
             btnSize="md"
@@ -200,15 +206,17 @@ const WorkspaceModal = () => {
   if (workspace?.reconnectRequired) {
     return (
       <ModalLayout title={MODAL_TITLES.workspaceReconnect} isOpen>
-        <p className="text-center text-base">
-          {L.workspace.reconnectExpired}
+        <p className={MODAL_STYLE_VAR.message}>
+          워크스페이스 연결이 만료되었습니다.
           <br />
-          {L.workspace.reconnectPrompt}
+          재연결하여 데이터 플레인을 다시 활성화해 주세요.
         </p>
         {reconnectMutation.isError && (
-          <Notice tone="error">{L.workspace.reconnectFailed}</Notice>
+          <Notice tone="error">
+            재연결에 실패했습니다. 다시 시도해 주세요.
+          </Notice>
         )}
-        <div className="flex w-full gap-2">
+        <div className={MODAL_STYLE_VAR.footer}>
           <Button
             btnText={BTN_TEXT.close}
             btnSize="md"
@@ -234,10 +242,10 @@ const WorkspaceModal = () => {
   if (isError && !workspace) {
     return (
       <ModalLayout title={MODAL_TITLES.workspaceManage} isOpen>
-        <p className="text-center text-base">
-          {L.workspace.loadFailed}
+        <p className={MODAL_STYLE_VAR.message}>
+          워크스페이스 정보를 불러올 수 없습니다.
           <br />
-          {L.common.tryAgainLater}
+          잠시 후 다시 시도해 주세요.
         </p>
         {closeButton}
       </ModalLayout>
@@ -245,18 +253,18 @@ const WorkspaceModal = () => {
   }
 
   const actionError = stopMutation.isError
-    ? L.workspace.stopFailed
+    ? FAIL_COPY.stop
     : startMutation.isError
-      ? L.workspace.restartFailed
+      ? FAIL_COPY.restart
       : null;
 
   return (
     <ModalLayout title={MODAL_TITLES.workspaceManage} isOpen>
-      <div className="flex w-full flex-col gap-4">
+      <div className={MODAL_STYLE_VAR.body}>
         {/* Lifecycle actions sit at the content's top-right as quiet
             TextButtons — the info fields carry the primary reading weight. */}
         <div className="flex justify-end gap-2">
-          {status === "stopped" ? (
+          {status === WORKSPACE_STATUS.stopped ? (
             <TextButton
               btnText={BTN_TEXT.restart}
               disabled={busy || startMutation.isPending}
@@ -282,15 +290,15 @@ const WorkspaceModal = () => {
         </div>
 
         <div className={styles.field}>
-          <span className={styles.label}>{L.workspace.plan}</span>
+          <span className={styles.label}>플랜</span>
           <span className={styles.label}>Free</span>
         </div>
         <div className={styles.field}>
-          <span className={styles.label}>{L.workspace.statusLabel}</span>
+          <span className={styles.label}>상태</span>
           <WorkspaceStatus status={status} className="cursor-default" />
         </div>
         <div className={styles.field}>
-          <span className={styles.label}>{L.workspace.storedMemories}</span>
+          <span className={styles.label}>저장된 기억 개수</span>
           <span className={styles.value}>
             {workspace?.rowCount != null
               ? memoryUsage(workspace.rowCount)

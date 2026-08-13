@@ -1,18 +1,24 @@
+import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router";
 
 import LoginPage from "@/pages/LoginPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import SessionsPage from "@/pages/SessionsPage";
 import TeamsPage from "@/pages/TeamsPage";
-import UITestPage from "@/pages/UITestPage";
 import UsersPage from "@/pages/UsersPage";
 import WorkspacePage from "@/pages/WorkspacePage";
 import LandingRedirect from "@/components/auth/LandingRedirect";
 import RequireAuth from "@/components/auth/RequireAuth";
 import NoticeModal from "@/components/elements/NoticeModal";
+import ToastContainer from "@/components/elements/ToastContainer";
 import AppLayout from "@/components/layout/AppLayout";
-import ToastContainer from "@/components/toast/ToastContainer";
 import { PATH_LIST } from "@/constants/commonConstants";
+
+/* Dev-only UI showcase — the import.meta.env.DEV guard is statically false in
+   production builds, so Rollup drops both the route and the chunk entirely. */
+const UITestPage = import.meta.env.DEV
+  ? lazy(() => import("@/pages/UITestPage"))
+  : null;
 
 /** App defines the top-level route table for Rune Console. */
 const App = () => {
@@ -27,7 +33,16 @@ const App = () => {
             <Route path={PATH_LIST.teams} element={<TeamsPage />} />
             <Route path={PATH_LIST.users} element={<UsersPage />} />
             <Route path={PATH_LIST.sessions} element={<SessionsPage />} />
-            <Route path={PATH_LIST.uiTest} element={<UITestPage />} />
+            {import.meta.env.DEV && UITestPage && (
+              <Route
+                path={PATH_LIST.uiTest}
+                element={
+                  <Suspense fallback={null}>
+                    <UITestPage />
+                  </Suspense>
+                }
+              />
+            )}
           </Route>
         </Route>
         {/* 404 (SC-04) — reachable regardless of auth; outside RequireAuth so a

@@ -4,10 +4,16 @@ import Button from "@/components/elements/Button";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
 import ModalTable from "@/components/users/ModalTable";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
-import { L } from "@/locales";
+import {
+  BTN_TEXT,
+  MODAL_TITLES,
+  TABLE_HEADERS,
+} from "@/constants/commonConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import type { TRoleChange } from "@/types/userTypes";
 
+const UPDATE_FAILED_MESSAGE = "권한 변경에 실패했습니다. 다시 시도해 주세요.";
+const UPDATE_SUCCESS_MESSAGE = "권한이 변경되었습니다.";
 
 type TPhase = "confirm" | "success" | "failed";
 
@@ -60,9 +66,9 @@ const RoleChangeConfirmModal = ({
   return (
     <ModalLayout title={MODAL_TITLES.roleChange} isOpen>
       <div className="flex flex-col gap-4">
-        <p className="text-base">{L.teams.roleChangeIntro}</p>
+        <p className="text-base">다음 멤버의 권한을 변경합니다:</p>
         <ModalTable
-          head={[subjectLabel, L.common.role]}
+          head={[subjectLabel, TABLE_HEADERS.role]}
           rows={rows.map((change) => [
             change.label,
             <>
@@ -71,13 +77,13 @@ const RoleChangeConfirmModal = ({
           ])}
         />
         {phase === "success" && (
-          <Notice tone="success">{L.members.roleChanged}</Notice>
+          <Notice tone="success">{UPDATE_SUCCESS_MESSAGE}</Notice>
         )}
         {phase === "failed" && (
-          <Notice tone="error">{L.members.roleChangeFailedRetry}</Notice>
+          <Notice tone="error">{UPDATE_FAILED_MESSAGE}</Notice>
         )}
       </div>
-      <div className="flex w-full items-center gap-4">
+      <div className={MODAL_STYLE_VAR.footer}>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"

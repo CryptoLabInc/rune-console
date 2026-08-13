@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import Button from "@/components/elements/Button";
 import Dropdown from "@/components/elements/Dropdown";
@@ -6,15 +6,27 @@ import Feedback from "@/components/elements/Feedback";
 import Pagination from "@/components/elements/Pagination";
 import Table from "@/components/table/Table";
 import TableCell from "@/components/table/TableCell";
+import TableEmptyRow from "@/components/table/TableEmptyRow";
 import TableFoot from "@/components/table/TableFoot";
 import TableHead from "@/components/table/TableHead";
 import TableHeaderCell from "@/components/table/TableHeaderCell";
+import TableLoadingRow from "@/components/table/TableLoadingRow";
 import TableRow from "@/components/table/TableRow";
 import { useInvitationHistoryQuery } from "@/hooks/queries/useInvitationHistoryQuery";
+import {
+  useServerPagination,
+  useSyncPaginationTotal,
+} from "@/hooks/useServerPagination";
 import { cn } from "@/utils/cn";
 import { formatDateTime } from "@/utils/formatDate";
-import { BTN_TEXT } from "@/constants/commonConstants";
-import { L } from "@/locales";
+import {
+  ARIA_LABELS,
+  BTN_TEXT,
+  DEFAULT_PAGE_SIZE,
+  FEEDBACK_TEXT,
+  PAGE_TITLES,
+  TABLE_HEADERS,
+} from "@/constants/commonConstants";
 import type { TDropdownOption } from "@/types/commonTypes";
 
 const styles = {
@@ -27,13 +39,10 @@ const styles = {
    sort query params (console API design §6). No status filter or
    issuance button: issuance lives in user/team management. */
 const SORT_OPTIONS: TDropdownOption[] = [
-  { value: "username", label: L.common.memberName },
-  { value: "issued_at", label: L.members.lastIssued },
-  { value: "last_access", label: L.members.lastAccessedAt },
+  { value: "username", label: TABLE_HEADERS.memberName },
+  { value: "issued_at", label: "최근 발급 시간" },
+  { value: "last_access", label: TABLE_HEADERS.lastAccess },
 ];
-
-/* 10 rows per page, fixed (SC-16 no.4) — the ?size=10 query param. */
-const PAGE_SIZE = 10;
 
 /**
  * SessionsPage is the session management screen (SC-16): the token
@@ -45,45 +54,32 @@ const PAGE_SIZE = 10;
  */
 const SessionsPage = () => {
   const [sort, setSort] = useState("last_access");
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const currentPage = Math.min(page, totalPages);
-  const historyQuery = useInvitationHistoryQuery(sort, currentPage, PAGE_SIZE);
+  const { page, totalPages, setPage, resetPage, syncTotal } =
+    useServerPagination();
+  const historyQuery = useInvitationHistoryQuery(sort, page, DEFAULT_PAGE_SIZE);
 
   const rows = historyQuery.data?.items ?? [];
   const total = historyQuery.data?.total ?? 0;
-
-  /* totalPages tracks the last response's total (a page/sort transition
-     keeps the previous value via keepPreviousData until the new page
-     resolves); currentPage clamps against it before the query call
-     above, so the request itself is always in range. This effect only
-     corrects the stored `page` once totalPages shrinks (e.g. a sort
-     change reduces the result count), so Pagination and later renders
-     resume from a valid value instead of the stale, too-high one. */
-  useEffect(() => {
-    const nextTotalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-    setTotalPages(nextTotalPages);
-    if (page > nextTotalPages) setPage(nextTotalPages);
-  }, [total, page]);
+  useSyncPaginationTotal(syncTotal, total);
 
   /* Sort change resets to page 1 (SC-16 no.4). */
   const changeSort = (value: string) => {
     setSort(value);
-    setPage(1);
+    resetPage();
   };
 
   /* ── SC-16 state B — 조회 실패 ──────────────────────────────────── */
   if (historyQuery.isError) {
     return (
-      <section className={styles.page} aria-label={L.nav.sessions}>
+      <section className={styles.page} aria-label={PAGE_TITLES.sessions}>
         <Feedback
           state="error"
           /* Taller, fully centered variant — the SC-16 state B canvas
              centers icon/text/button in a 180px-min panel, unlike the
              default left-aligned 92px row. */
           className="flex min-h-45 flex-col items-center justify-center text-center"
-          title={L.members.historyLoadError}
-          description={L.common.refreshRetry}
+          title="이력 정보를 불러올 수 없습니다."
+          description={FEEDBACK_TEXT.refreshRetry}
           action={
             <Button
               btnText={BTN_TEXT.refresh}
@@ -100,7 +96,7 @@ const SessionsPage = () => {
 
   /* ── SC-16 state A — 기본 ───────────────────────────────────────── */
   return (
-    <section className={styles.page} aria-label={L.nav.sessions}>
+    <section className={styles.page} aria-label={PAGE_TITLES.sessions}>
       <Table
         fluid
         /* Fixed page height: thead 34px + 10 rows × 36px (h-9). Short
@@ -109,24 +105,24 @@ const SessionsPage = () => {
         scrollClassName="min-h-[394px]"
         toolbar={
           <div className="flex items-center gap-2 px-4 py-4">
-            <span className="text-md text-faint">{L.common.sortBy}</span>
+            <span className="text-md text-faint">정렬 기준</span>
             <Dropdown
               options={SORT_OPTIONS}
               value={sort}
               onChange={changeSort}
               size="sm"
-              ariaLabel={L.common.sort}
+              ariaLabel={ARIA_LABELS.sort}
               className="w-40"
             />
           </div>
         }
         foot={
           <TableFoot
-            info={L.members.sessionPageInfo(total, PAGE_SIZE)}
+            info={`총 ${total}건 · ${DEFAULT_PAGE_SIZE}건/페이지`}
             className="flex-row"
           >
             <Pagination
-              page={currentPage}
+              page={page}
               totalPages={totalPages}
               onChange={setPage}
             />
@@ -136,34 +132,20 @@ const SessionsPage = () => {
         {/* Fixed column widths — auto layout would resize per page's
             content and shift the headers while paginating. */}
         <TableHead>
-          <TableHeaderCell className="w-2/5">{L.common.users}</TableHeaderCell>
-          <TableHeaderCell className="w-[30%]">
-            {L.members.issuedAt}
+          <TableHeaderCell className="w-2/5">
+            {TABLE_HEADERS.user}
           </TableHeaderCell>
           <TableHeaderCell className="w-[30%]">
-            {L.members.lastAccessedAt}
+            {TABLE_HEADERS.issuedAt}
+          </TableHeaderCell>
+          <TableHeaderCell className="w-[30%]">
+            {TABLE_HEADERS.lastAccess}
           </TableHeaderCell>
         </TableHead>
         <tbody>
-          {historyQuery.isPending && (
-            <tr>
-              <td
-                colSpan={3}
-                className="text-faint px-3 py-8 text-center text-sm"
-              >
-                {L.common.loading}
-              </td>
-            </tr>
-          )}
+          {historyQuery.isPending && <TableLoadingRow colSpan={3} />}
           {!historyQuery.isPending && total === 0 && (
-            <tr>
-              <td
-                colSpan={3}
-                className="text-muted-foreground border-t px-3 py-8 text-center text-sm"
-              >
-                {L.members.noHistory}
-              </td>
-            </tr>
+            <TableEmptyRow colSpan={3}>이력이 없습니다.</TableEmptyRow>
           )}
           {rows.map((row) => (
             /* Reissues are separate rows (D11) — username alone is not

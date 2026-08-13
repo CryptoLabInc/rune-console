@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { postSystemUpdate } from "@/api/updateAPIs";
+import { SYSTEM_UPDATE_STATE } from "@/constants/apiConstants";
 import { QUERY_KEYS } from "@/constants/commonConstants";
 import type { TSystemUpdateStatus } from "@/types/updateTypes";
 
@@ -21,7 +22,7 @@ export const useUpdateMutation = () => {
             ? {
                 ...current,
                 targetVersion: version,
-                state: "queued",
+                state: SYSTEM_UPDATE_STATE.queued,
               }
             : current,
       );

@@ -1,8 +1,7 @@
 import { createPortal } from "react-dom";
 
+import { useToastStore } from "@/state/store/toastStore";
 import { cn } from "@/utils/cn";
-import { L } from "@/locales";
-import { useToastStore } from "@/stores/toastStore";
 
 const styles = {
   stack: "fixed top-4 right-4 z-90 flex flex-col items-end gap-2",
@@ -34,7 +33,7 @@ const ToastContainer = () => {
           key={toast.id}
           role={toast.tone === "error" ? "alert" : "status"}
           className={cn(styles.toast, toast.leaving && styles.toastLeaving)}
-          title={L.elements.clickToDismiss}
+          title="클릭하여 닫기"
           onClick={() => dismissToast(toast.id)}
         >
           <span

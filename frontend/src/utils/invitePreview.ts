@@ -1,8 +1,4 @@
-import {
-  getTeamDescendantIds,
-  getTeamName,
-} from "@/components/teams/teamHierarchy";
-import { L } from "@/locales";
+import { getTeamDescendantIds, getTeamName } from "@/utils/teamHierarchy";
 import type { TTeamTree } from "@/types/teamTypes";
 import type { TInviteSet } from "@/types/userTypes";
 
@@ -40,7 +36,7 @@ export const buildInvitePreview = (
       teamId: set.teamId,
       teamName: getTeamName(teams, set.teamId),
       role: set.role,
-      reason: L.members.directlyAssigned,
+      reason: "직접 지정",
       indent: false,
     });
     for (const descId of getTeamDescendantIds(teams, set.teamId)) {
@@ -52,8 +48,8 @@ export const buildInvitePreview = (
         teamName: getTeamName(teams, descId),
         role: direct ?? set.role,
         reason: direct
-          ? L.members.teamAlreadyInvited
-          : L.members.subteamOf(getTeamName(teams, set.teamId)),
+          ? "이미 초대된 팀입니다."
+          : `${getTeamName(teams, set.teamId)} 하위 팀`,
         indent: true,
       });
     }

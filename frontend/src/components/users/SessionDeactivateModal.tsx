@@ -3,7 +3,7 @@ import { useState } from "react";
 import Button from "@/components/elements/Button";
 import ModalLayout from "@/components/layout/ModalLayout";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
-import { L } from "@/locales";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 
 interface SessionDeactivateModalProps {
   account: string;
@@ -37,11 +37,11 @@ const SessionDeactivateModal = ({
 
   return (
     <ModalLayout title={MODAL_TITLES.deactivateSession} isOpen>
-      <p className="text-center text-base">
-        {L.members.deactivateConfirm(account)} <br />
-        {L.members.allMcpTerminated}
+      <p className={MODAL_STYLE_VAR.message}>
+        {account}의 세션을 비활성화하시겠습니까? <br />
+        모든 MCP 세션이 종료됩니다.
       </p>
-      <div className="flex w-full items-center gap-4">
+      <div className={MODAL_STYLE_VAR.footer}>
         <Button
           btnText={BTN_TEXT.cancel}
           btnSize="md"

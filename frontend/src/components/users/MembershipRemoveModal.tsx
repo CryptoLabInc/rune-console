@@ -4,10 +4,15 @@ import Button from "@/components/elements/Button";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
 import ModalTable from "@/components/users/ModalTable";
-import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
-import { L } from "@/locales";
+import {
+  BTN_TEXT,
+  MODAL_TITLES,
+  TABLE_HEADERS,
+} from "@/constants/commonConstants";
+import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import type { TMembershipRemoveTarget } from "@/types/userTypes";
 
+const REMOVE_FAILED_MESSAGE = `멤버십 제거에 실패했습니다. 다시 시도해 주세요.`;
 
 interface MembershipRemoveModalProps {
   /** SC-06 entry: selected members × current team · SC-13 entry:
@@ -53,7 +58,7 @@ const MembershipRemoveModal = ({
   if (failed) {
     return (
       <ModalLayout title={MODAL_TITLES.removeMembership} isOpen>
-        <p className="text-center text-base">{L.members.removeFailed}</p>
+        <p className={MODAL_STYLE_VAR.message}>{REMOVE_FAILED_MESSAGE}</p>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"
@@ -67,9 +72,9 @@ const MembershipRemoveModal = ({
   return (
     <ModalLayout title={MODAL_TITLES.removeMembership} isOpen>
       <div className="flex flex-col gap-4">
-        <p className="text-base">{L.teams.removeIntro}</p>
+        <p className="text-base">다음 멤버십을 제거합니다:</p>
         <ModalTable
-          head={["account", L.common.team, L.common.role]}
+          head={[TABLE_HEADERS.account, TABLE_HEADERS.team, TABLE_HEADERS.role]}
           rows={targets.map((target) => [
             target.account,
             target.teamName,
@@ -77,10 +82,12 @@ const MembershipRemoveModal = ({
           ])}
         />
         {subteamNotice && (
-          <Notice>{L.teams.removeKeepSubteams}</Notice>
+          <Notice>
+            하위 팀 소속은 유지됩니다. 필요할 경우 개별 선택 후 제거하세요.
+          </Notice>
         )}
       </div>
-      <div className="flex w-full items-center gap-4">
+      <div className={MODAL_STYLE_VAR.footer}>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"
