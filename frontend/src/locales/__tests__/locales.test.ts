@@ -1,14 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import { BTN_TEXT, MODAL_TITLES, NAV_LIST } from "@/constants/commonConstants";
+import { WORKSPACE_STATUS_VAR } from "@/constants/styleConstants";
 import { L, language } from "@/locales";
 import { en } from "@/locales/en";
 import { ko } from "@/locales/ko";
-import {
-  BTN_TEXT,
-  MODAL_TITLES,
-  NAV_LIST,
-} from "@/constants/commonConstants";
-import { WORKSPACE_STATUS_VAR } from "@/constants/styleConstants";
 
 /* Key parity between en and ko is enforced at COMPILE time (ko is typed as
  * TLocale = typeof en), so a drifted key never survives tsc. The runtime

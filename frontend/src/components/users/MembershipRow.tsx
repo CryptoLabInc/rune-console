@@ -3,8 +3,8 @@ import Dropdown from "@/components/elements/Dropdown";
 import TableCell from "@/components/table/TableCell";
 import TableRow from "@/components/table/TableRow";
 import { cn } from "@/utils/cn";
-import { L } from "@/locales";
 import type { TDropdownOption } from "@/types/commonTypes";
+import { L } from "@/locales";
 
 const styles = {
   changedBadge:
@@ -57,7 +57,10 @@ const MembershipRow = ({
         >
           {name}
           {changed && (
-            <em className={styles.changedBadge} aria-label={L.elements.unsavedChanges}>
+            <em
+              className={styles.changedBadge}
+              aria-label={L.elements.unsavedChanges}
+            >
               CHANGED
             </em>
           )}

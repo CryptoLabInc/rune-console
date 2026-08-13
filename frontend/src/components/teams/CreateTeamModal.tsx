@@ -1,4 +1,3 @@
-import { L } from "@/locales";
 import { useState } from "react";
 
 import Button from "@/components/elements/Button";
@@ -13,10 +12,9 @@ import {
   PLACEHOLDERS,
 } from "@/constants/commonConstants";
 import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
-import {
-  TEAM_NAME_PATTERN,
-} from "@/constants/teamConstants";
+import { TEAM_NAME_PATTERN } from "@/constants/teamConstants";
 import type { TTeamTree } from "@/types/teamTypes";
+import { L } from "@/locales";
 
 interface CreateTeamModalProps {
   /** Real GET /teams/tree result — feeds the parent-team picker and the
@@ -64,8 +62,8 @@ const CreateTeamModal = ({
       <div className={MODAL_STYLE_VAR.body}>
         <Input
           id="create-team-name"
-          labelText="팀 이름"
-          placeholder="예: platform-team"
+          labelText={L.teams.teamName}
+          placeholder={L.teams.teamNamePlaceholder}
           maxLength={50}
           value={name}
           setValue={setName}
@@ -73,15 +71,15 @@ const CreateTeamModal = ({
           error={nameError}
         />
         <Dropdown
-          label="상위 팀 (선택)"
+          label={L.teams.parentTeamOptional}
           placeholder={PLACEHOLDERS.selectTeam}
           options={buildTeamOptions(teams)}
           value={parentId}
           onChange={setParentId}
         />
         <Notice tone="info">
-          상위 팀을 선택하면 상위 팀의 멤버가 새 팀에 자동 복사됩니다. <br />
-          멤버 편집은 팀 생성 후 상세 페이지에서 할 수 있습니다.
+          {L.teams.parentCopyInfo1} <br />
+          {L.teams.parentCopyInfo2}
         </Notice>
         {error && <Notice tone="error">{error}</Notice>}
       </div>

@@ -41,7 +41,10 @@ const Pagination = ({
   className,
 }: PaginationProps) => {
   return (
-    <nav className={cn(styles.wrap, className)} aria-label={L.elements.pagination}>
+    <nav
+      className={cn(styles.wrap, className)}
+      aria-label={L.elements.pagination}
+    >
       <button
         type="button"
         className={styles.arrow}

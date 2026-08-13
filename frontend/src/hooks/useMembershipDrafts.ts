@@ -1,4 +1,3 @@
-import { L } from "@/locales";
 import { useState } from "react";
 
 import {
@@ -14,6 +13,7 @@ import { ERROR_CODES } from "@/constants/apiConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import type { TBatchResult, TTeamTree } from "@/types/teamTypes";
 import type { TUserListItem } from "@/types/userTypes";
+import { L } from "@/locales";
 
 /** One membership row as rendered: server truth (baseRole) with the
     staged edits (role pick, checkbox) applied on top. */

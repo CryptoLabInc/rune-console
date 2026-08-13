@@ -159,7 +159,8 @@ export const en = {
       "Once the invited user connects RUNE, their status changes to ",
     inviteSuffix: ".",
     // Team name / create / rename
-    teamNameRule: "Only numbers, Korean and English letters, - and _ are allowed.",
+    teamNameRule:
+      "Only numbers, Korean and English letters, - and _ are allowed.",
     teamName: "Team Name",
     teamNamePlaceholder: "e.g. platform-team",
     parentTeamOptional: "Parent Team (Optional)",
@@ -173,7 +174,8 @@ export const en = {
     // Delete-team modal
     hasChildrenAlert1: "Teams with sub-teams cannot be deleted.",
     hasChildrenAlert2: "Delete the sub-teams first, then try again.",
-    memoryChoiceInfo: "Choose how to handle this team's memory before deleting.",
+    memoryChoiceInfo:
+      "Choose how to handle this team's memory before deleting.",
     transferOption: "① Transfer to Another Team",
     defaultTag: "(Default)",
     destinationTeam: "Destination Team",

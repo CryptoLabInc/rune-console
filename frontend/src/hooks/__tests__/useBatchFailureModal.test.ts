@@ -1,4 +1,3 @@
-import { L } from "@/locales";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -6,6 +5,7 @@ import {
   toBatchFailureRows,
   useBatchFailureModal,
 } from "@/hooks/useBatchFailureModal";
+import { L } from "@/locales";
 
 describe("useBatchFailureModal", () => {
   it("starts closed and opens with the given rows", () => {

@@ -28,6 +28,7 @@ import {
   TABLE_HEADERS,
 } from "@/constants/commonConstants";
 import type { TDropdownOption } from "@/types/commonTypes";
+import { L } from "@/locales";
 
 const styles = {
   page: "flex flex-col gap-3.5 p-4",
@@ -40,7 +41,7 @@ const styles = {
    issuance button: issuance lives in user/team management. */
 const SORT_OPTIONS: TDropdownOption[] = [
   { value: "username", label: TABLE_HEADERS.memberName },
-  { value: "issued_at", label: "최근 발급 시간" },
+  { value: "issued_at", label: L.members.lastIssued },
   { value: "last_access", label: TABLE_HEADERS.lastAccess },
 ];
 
@@ -78,7 +79,7 @@ const SessionsPage = () => {
              centers icon/text/button in a 180px-min panel, unlike the
              default left-aligned 92px row. */
           className="flex min-h-45 flex-col items-center justify-center text-center"
-          title="이력 정보를 불러올 수 없습니다."
+          title={L.members.historyLoadError}
           description={FEEDBACK_TEXT.refreshRetry}
           action={
             <Button
@@ -105,7 +106,7 @@ const SessionsPage = () => {
         scrollClassName="min-h-[394px]"
         toolbar={
           <div className="flex items-center gap-2 px-4 py-4">
-            <span className="text-md text-faint">정렬 기준</span>
+            <span className="text-md text-faint">{L.common.sortBy}</span>
             <Dropdown
               options={SORT_OPTIONS}
               value={sort}
@@ -118,7 +119,7 @@ const SessionsPage = () => {
         }
         foot={
           <TableFoot
-            info={`총 ${total}건 · ${DEFAULT_PAGE_SIZE}건/페이지`}
+            info={L.members.sessionPageInfo(total, DEFAULT_PAGE_SIZE)}
             className="flex-row"
           >
             <Pagination
@@ -145,7 +146,7 @@ const SessionsPage = () => {
         <tbody>
           {historyQuery.isPending && <TableLoadingRow colSpan={3} />}
           {!historyQuery.isPending && total === 0 && (
-            <TableEmptyRow colSpan={3}>이력이 없습니다.</TableEmptyRow>
+            <TableEmptyRow colSpan={3}>{L.members.noHistory}</TableEmptyRow>
           )}
           {rows.map((row) => (
             /* Reissues are separate rows (D11) — username alone is not

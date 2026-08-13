@@ -4,6 +4,7 @@ import TableCell from "@/components/table/TableCell";
 import TableRow from "@/components/table/TableRow";
 import { CHIP_STATUS } from "@/constants/userConstants";
 import type { TUserListItem } from "@/types/userTypes";
+import { L } from "@/locales";
 
 const styles = {
   /* Wide enough for typical names at the 40% column; anything longer
@@ -41,7 +42,7 @@ const UserRow = ({ user, selected, onSelect, onOpen }: UserRowProps) => {
           <Checkbox
             checked={selected}
             onChange={onSelect}
-            ariaLabel={`${user.account} 선택`}
+            ariaLabel={L.common.selectName(user.account)}
           />
         </div>
       </TableCell>

@@ -1,4 +1,3 @@
-import { L } from "@/locales";
 import { useState } from "react";
 
 import Button from "@/components/elements/Button";
@@ -7,10 +6,9 @@ import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
-import {
-  TEAM_NAME_PATTERN,
-} from "@/constants/teamConstants";
+import { TEAM_NAME_PATTERN } from "@/constants/teamConstants";
 import type { TTeamTree } from "@/types/teamTypes";
+import { L } from "@/locales";
 
 interface RenameTeamModalProps {
   currentName: string;
@@ -67,7 +65,7 @@ const RenameTeamModal = ({
       <div className={MODAL_STYLE_VAR.body}>
         <Input
           id="rename-team-name"
-          labelText="팀 이름"
+          labelText={L.teams.teamName}
           maxLength={50}
           value={name}
           setValue={setName}

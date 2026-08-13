@@ -4,6 +4,7 @@ import Feedback from "@/components/elements/Feedback";
 import TreeNode from "@/components/tree/TreeNode";
 import { cn } from "@/utils/cn";
 import type { TTeamViewNode } from "@/types/teamTypes";
+import { L } from "@/locales";
 
 interface TeamTreeProps {
   teams: TTeamViewNode[];
@@ -64,8 +65,8 @@ const TeamTree = ({
   onSelect,
   query = "",
   defaultExpandedIds = [],
-  emptyTitle = "검색 결과가 없습니다.",
-  emptyDescription = "팀 이름을 다시 확인해 주세요.",
+  emptyTitle = L.common.noResults,
+  emptyDescription = L.teams.checkTeamName,
   className,
 }: TeamTreeProps) => {
   const [expanded, setExpanded] = useState(() => new Set(defaultExpandedIds));

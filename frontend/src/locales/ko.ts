@@ -162,7 +162,8 @@ export const ko: TLocale = {
     teamNamePlaceholder: "예: platform-team",
     parentTeamOptional: "상위 팀 (선택)",
     selectTeam: "팀 선택",
-    parentCopyInfo1: "상위 팀을 선택하면 상위 팀의 멤버가 새 팀에 자동 복사됩니다.",
+    parentCopyInfo1:
+      "상위 팀을 선택하면 상위 팀의 멤버가 새 팀에 자동 복사됩니다.",
     parentCopyInfo2: "멤버 편집은 팀 생성 후 상세 페이지에서 할 수 있습니다.",
     dupName: "같은 상위 팀에 동일한 이름이 이미 있습니다.",
     invalidTeamName: "팀 이름 형식이 올바르지 않습니다.",
@@ -177,7 +178,8 @@ export const ko: TLocale = {
     selectTeamFirst: "팀을 먼저 선택하세요",
     targetNameMismatch: "타겟 팀명이 일치하지 않습니다.",
     purgeOption: "② 팀 내 기억 삭제",
-    purgeDesc: "다른 팀과 공유 중인 기억은 해당 팀에서 계속 조회할 수 있습니다.",
+    purgeDesc:
+      "다른 팀과 공유 중인 기억은 해당 팀에서 계속 조회할 수 있습니다.",
     confirmDeleteLabel: "확인 - 삭제할 팀명 입력",
     nameMismatch: "팀명이 일치하지 않습니다.",
     cannotDeleteHasChildren: "하위 팀이 있어 삭제할 수 없습니다.",
@@ -187,7 +189,8 @@ export const ko: TLocale = {
     zoomIn: "확대",
     // Remove-membership / role-change modals
     removeIntro: "다음 멤버십을 제거합니다:",
-    removeKeepSubteams: "하위 팀 소속은 유지됩니다. 필요할 경우 개별 선택 후 제거하세요.",
+    removeKeepSubteams:
+      "하위 팀 소속은 유지됩니다. 필요할 경우 개별 선택 후 제거하세요.",
     roleChangeIntro: "다음 멤버의 권한을 변경합니다:",
     roleChangeCol: "권한 변경",
     // Tree & detail view
@@ -338,7 +341,8 @@ export const ko: TLocale = {
     tearingDown1: "기존 워크스페이스를 삭제하는 중입니다…",
     tearingDown2: "삭제가 완료되면 워크스페이스 생성을 시작합니다.",
     orphaned1: "콘솔이 재설치되어 이 워크스페이스와 연결할 수 없습니다.",
-    orphaned2: "기존에 저장된 데이터는 이전 보안 키로 암호화되어 복구할 수 없습니다.",
+    orphaned2:
+      "기존에 저장된 데이터는 이전 보안 키로 암호화되어 복구할 수 없습니다.",
     orphaned3: "삭제 후 재생성하면 빈 워크스페이스로 다시 시작합니다.",
     reconnectExpired: "워크스페이스 연결이 만료되었습니다.",
     reconnectPrompt: "재연결하여 데이터 플레인을 다시 활성화해 주세요.",

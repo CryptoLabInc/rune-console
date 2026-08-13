@@ -4,8 +4,8 @@ import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 
 import { cn } from "@/utils/cn";
-import { L } from "@/locales";
 import type { TDropdownOption } from "@/types/commonTypes";
+import { L } from "@/locales";
 
 const styles = {
   field: "grid w-full min-w-0 gap-2",

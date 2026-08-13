@@ -3,4 +3,3 @@
  * keeping a field's pattern and its validation copy together. */
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-

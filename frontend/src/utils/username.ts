@@ -5,7 +5,6 @@ import { L } from "@/locales";
 
 export const USERNAME_MAX_LENGTH = 50;
 
-
 /* Compatibility jamo (ㄱ-ㅎ·ㅏ-ㅣ) are accepted while typing so an
    in-progress IME composition never flags as invalid mid-keystroke;
    the submit-time pattern below requires composed syllables. */

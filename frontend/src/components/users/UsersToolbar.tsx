@@ -3,6 +3,7 @@ import Dropdown from "@/components/elements/Dropdown";
 import SearchInput from "@/components/elements/SearchInput";
 import { ARIA_LABELS, BTN_TEXT } from "@/constants/commonConstants";
 import type { TDropdownOption } from "@/types/commonTypes";
+import { L } from "@/locales";
 
 interface UsersToolbarProps {
   search: string;
@@ -50,14 +51,14 @@ const UsersToolbar = ({
           <SearchInput
             value={search}
             onChange={onSearchChange}
-            placeholder="이름 검색"
+            placeholder={L.members.searchByName}
             maxLength={100}
             className="w-50"
           />
           {/* filter/order dropdown */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-md text-faint">정렬 기준</span>
+              <span className="text-md text-faint">{L.common.sortBy}</span>
               <Dropdown
                 options={sortOptions}
                 value={sort}
@@ -68,24 +69,26 @@ const UsersToolbar = ({
               />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-md text-faint">멤버 상태</span>
+              <span className="text-md text-faint">
+                {L.common.memberStatus}
+              </span>
               <Dropdown
                 options={statusOptions}
                 value={statusFilter}
                 onChange={onStatusChange}
                 size="sm"
-                ariaLabel="status 필터"
+                ariaLabel={L.members.statusFilterAria}
                 className="w-32"
               />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-md text-faint">팀</span>
+              <span className="text-md text-faint">{L.common.team}</span>
               <Dropdown
                 options={groupOptions}
                 value={groupFilter}
                 onChange={onGroupChange}
                 size="sm"
-                ariaLabel="group 필터"
+                ariaLabel={L.members.teamFilterAria}
                 className="w-40"
               />
             </div>
