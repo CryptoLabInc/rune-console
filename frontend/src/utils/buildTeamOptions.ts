@@ -1,3 +1,4 @@
+import { localizeTeamName } from "@/utils/teamHierarchy";
 import type { TDropdownOption } from "@/types/commonTypes";
 import type { TTeamTree } from "@/types/teamTypes";
 
@@ -9,7 +10,7 @@ export const buildTeamOptions = (teams: TTeamTree): TDropdownOption[] => {
     teams
       .filter((t) => t.parentId === parentId)
       .flatMap((t) => [
-        { value: t.id, label: t.name, depth },
+        { value: t.id, label: localizeTeamName(t.name), depth },
         ...walk(t.id, depth + 1),
       ]);
   return walk(null, 0);

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import { cn } from "@/utils/cn";
+import { localizeTeamName } from "@/utils/teamHierarchy";
 import type { TTeamNode, TTeamTree } from "@/types/teamTypes";
 import { L } from "@/locales";
 
@@ -140,11 +141,11 @@ const OrgNode = ({
           connector === "none" && rootBorderById.get(node.id),
           isMatch && styles.orgBoxMatch,
         )}
-        aria-label={L.teams.viewDetails(node.name)}
+        aria-label={L.teams.viewDetails(localizeTeamName(node.name))}
         onClick={() => onSelect(node.id)}
       >
-        <b className={styles.orgBoxName} title={node.name}>
-          {node.name}
+        <b className={styles.orgBoxName} title={localizeTeamName(node.name)}>
+          {localizeTeamName(node.name)}
         </b>
       </button>
 

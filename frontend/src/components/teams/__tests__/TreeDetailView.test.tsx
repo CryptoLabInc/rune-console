@@ -435,7 +435,9 @@ describe("TreeDetailView", () => {
     await user.click(screen.getByRole("radio", { name: /팀 내 기억 삭제/ }));
     await user.type(
       screen.getByLabelText("확인 - 삭제할 팀명 입력"),
-      "Platform",
+      // Team names are demo-localized (localizeTeamName) — the confirm input
+      // must match the displayed (Korean, under the test's ko pin) name.
+      "플랫폼",
     );
     /* Two "팀 삭제" buttons exist once the confirm modal opens (the card
        trigger + the modal's confirm) — the confirm one is the last. */
@@ -752,7 +754,9 @@ describe("TreeDetailView", () => {
     await user.click(screen.getByRole("radio", { name: /팀 내 기억 삭제/ }));
     await user.type(
       screen.getByLabelText("확인 - 삭제할 팀명 입력"),
-      "Platform",
+      // Team names are demo-localized (localizeTeamName) — the confirm input
+      // must match the displayed (Korean, under the test's ko pin) name.
+      "플랫폼",
     );
     const confirmButtons = screen.getAllByRole("button", {
       name: BTN_TEXT.deleteTeam,

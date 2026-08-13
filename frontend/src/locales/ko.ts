@@ -77,7 +77,7 @@ export const ko: TLocale = {
   nav: {
     teams: "팀 관리",
     users: "멤버 관리",
-    sessions: "세션 기록",
+    sessions: "세션 관리",
   },
   login: {
     failed1: "로그인 중 문제가 발생했습니다.",
@@ -373,5 +373,15 @@ export const ko: TLocale = {
   },
   validation: {
     usernameRule: "한글, 영문 소문자, 단어 사이 공백 1칸만 입력할 수 있습니다.",
+  },
+  /* DEMO ONLY — see en.ts. Maps the mock's English sample team names to
+     Korean so the demo reads naturally when toggled; real team names pass
+     through verbatim (localizeTeamName). */
+  demoTeams: {
+    Platform: "플랫폼",
+    Payments: "결제",
+    Infra: "인프라",
+    Data: "데이터",
+    Growth: "그로스",
   },
 };
