@@ -51,9 +51,11 @@ const styles = {
   page: "flex flex-col gap-3.5 p-4",
 };
 
-/* Filter/sort option sets (SC-11 no.2–3). "all" stands in for 전체. The list
-   shows only the session axis, so the filter matches it. */
-const STATUS_OPTIONS: TDropdownOption[] = [
+/* Filter/sort option sets (SC-11 no.2–3). "all" stands in for 전체. Built
+   inside the component (per render) rather than at module scope: the labels
+   read L.* / getters, which a module-level array would freeze at the
+   load-time language — the dropdowns would then not follow a live switch. */
+const buildStatusOptions = (): TDropdownOption[] => [
   { value: "all", label: L.common.all },
   { value: SESSION_STATUS.online, label: L.status.member.online },
   { value: SESSION_STATUS.offline, label: L.status.member.offline },
@@ -67,7 +69,7 @@ const buildGroupOptions = (teams: TTeamTree): TDropdownOption[] => [
   ...buildTeamOptions(teams).map(({ value, label }) => ({ value, label })),
 ];
 
-const SORT_OPTIONS: TDropdownOption[] = [
+const buildSortOptions = (): TDropdownOption[] => [
   { value: "last_invited", label: L.members.lastInviteSent },
   { value: "username", label: TABLE_HEADERS.memberName },
 ];
@@ -103,6 +105,8 @@ const UsersPage = () => {
   const deactivateSession = useDeactivateUserSession(drawerUserId ?? "");
   const cancel = useCancelInvitation();
   const groupOptions = buildGroupOptions(teams ?? []);
+  const statusOptions = buildStatusOptions();
+  const sortOptions = buildSortOptions();
 
   const {
     inviteMember,
@@ -232,8 +236,8 @@ const UsersPage = () => {
             sort={sort}
             statusFilter={statusFilter}
             groupFilter={groupFilter}
-            sortOptions={SORT_OPTIONS}
-            statusOptions={STATUS_OPTIONS}
+            sortOptions={sortOptions}
+            statusOptions={statusOptions}
             groupOptions={groupOptions}
             onSearchChange={withPageReset(setSearch)}
             onSortChange={withPageReset(setSort)}
