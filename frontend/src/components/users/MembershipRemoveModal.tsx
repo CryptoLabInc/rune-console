@@ -8,7 +8,6 @@ import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import { L } from "@/locales";
 import type { TMembershipRemoveTarget } from "@/types/userTypes";
 
-const REMOVE_FAILED_MESSAGE = L.members.removeFailed;
 
 interface MembershipRemoveModalProps {
   /** SC-06 entry: selected members × current team · SC-13 entry:
@@ -54,7 +53,7 @@ const MembershipRemoveModal = ({
   if (failed) {
     return (
       <ModalLayout title={MODAL_TITLES.removeMembership} isOpen>
-        <p className="text-center text-base">{REMOVE_FAILED_MESSAGE}</p>
+        <p className="text-center text-base">{L.members.removeFailed}</p>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"

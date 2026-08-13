@@ -8,8 +8,6 @@ import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import { L } from "@/locales";
 import type { TRoleChange } from "@/types/userTypes";
 
-const UPDATE_FAILED_MESSAGE = L.members.roleChangeFailedRetry;
-const UPDATE_SUCCESS_MESSAGE = L.members.roleChanged;
 
 type TPhase = "confirm" | "success" | "failed";
 
@@ -73,10 +71,10 @@ const RoleChangeConfirmModal = ({
           ])}
         />
         {phase === "success" && (
-          <Notice tone="success">{UPDATE_SUCCESS_MESSAGE}</Notice>
+          <Notice tone="success">{L.members.roleChanged}</Notice>
         )}
         {phase === "failed" && (
-          <Notice tone="error">{UPDATE_FAILED_MESSAGE}</Notice>
+          <Notice tone="error">{L.members.roleChangeFailedRetry}</Notice>
         )}
       </div>
       <div className="flex w-full items-center gap-4">

@@ -4,10 +4,7 @@ import Button from "@/components/elements/Button";
 import Input from "@/components/elements/Input";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
-import {
-  TEAM_NAME_PATTERN,
-  TEAM_NAME_RULE_TEXT,
-} from "@/components/teams/teamOptions";
+import { TEAM_NAME_PATTERN } from "@/components/teams/teamOptions";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
 import { L } from "@/locales";
 import type { TTeamTree } from "@/types/teamTypes";
@@ -57,7 +54,7 @@ const RenameTeamModal = ({
     trimmed.length > 0 && isChanged && !isInvalidFormat && !isDuplicate;
 
   const nameError = isInvalidFormat
-    ? TEAM_NAME_RULE_TEXT
+    ? L.teams.teamNameRule
     : isDuplicate
       ? L.teams.dupName
       : undefined;
@@ -71,7 +68,7 @@ const RenameTeamModal = ({
           maxLength={50}
           value={name}
           setValue={setName}
-          hint={TEAM_NAME_RULE_TEXT}
+          hint={L.teams.teamNameRule}
           error={nameError}
         />
         {error && <Notice tone="error">{error}</Notice>}

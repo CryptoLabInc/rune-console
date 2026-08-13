@@ -5,7 +5,6 @@ import { L } from "@/locales";
 
 export const USERNAME_MAX_LENGTH = 50;
 
-export const USERNAME_FORMAT_ERROR = L.validation.usernameRule;
 
 /* Compatibility jamo (ㄱ-ㅎ·ㅏ-ㅣ) are accepted while typing so an
    in-progress IME composition never flags as invalid mid-keystroke;
@@ -31,7 +30,7 @@ export const normalizeUsernameInput = (value: string): string =>
 export const validateUsername = (value: string): string | undefined => {
   if (value === "") return undefined;
   if (value.length > USERNAME_MAX_LENGTH || !TYPING_PATTERN.test(value))
-    return USERNAME_FORMAT_ERROR;
+    return L.validation.usernameRule;
   return undefined;
 };
 
