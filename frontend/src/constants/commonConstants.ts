@@ -1,3 +1,4 @@
+import { L } from "@/locales";
 /** BRAND_WORDMARK is the displayed product wordmark, shared by the navbars
  * (SC-01/SC-03) and the login card heading (SC-01) so the brand string has a
  * single source of truth. */
@@ -18,60 +19,146 @@ export const DEFAULT_PAGE_SIZE = 10;
  * scope — those are accessibility strings, not button captions. */
 export const BTN_TEXT = {
   // Generic actions
-  close: "닫기",
-  cancel: "취소",
-  confirm: "확인",
-  save: "저장",
-  delete: "삭제하기",
-  remove: "제거하기",
-  add: "추가",
-  create: "생성",
-  change: "변경하기",
-  refresh: "새로고침",
-  retry: "다시 시도",
-  update: "업데이트",
-  later: "나중에",
+  get close() {
+    return L.btn.close;
+  },
+  get cancel() {
+    return L.btn.cancel;
+  },
+  get confirm() {
+    return L.btn.confirm;
+  },
+  get save() {
+    return L.btn.save;
+  },
+  get delete() {
+    return L.btn.delete;
+  },
+  get remove() {
+    return L.btn.remove;
+  },
+  get add() {
+    return L.btn.add;
+  },
+  get create() {
+    return L.btn.create;
+  },
+  get change() {
+    return L.btn.change;
+  },
+  get refresh() {
+    return L.btn.refresh;
+  },
+  get retry() {
+    return L.btn.retry;
+  },
+  get update() {
+    return L.btn.update;
+  },
+  get later() {
+    return L.btn.later;
+  },
   // Auth / navigation
-  signOut: "로그아웃",
-  getStarted: "시작하기",
-  login: "로그인하기",
-  home: "홈으로",
+  get signOut() {
+    return L.btn.signOut;
+  },
+  get getStarted() {
+    return L.btn.getStarted;
+  },
+  get login() {
+    return L.btn.login;
+  },
+  get home() {
+    return L.btn.home;
+  },
   // Workspace
-  restart: "재실행",
-  stop: "중지",
-  deactivate: "비활성화",
-  recreate: "삭제 후 재생성",
-  reconnect: "재연결",
+  get restart() {
+    return L.btn.restart;
+  },
+  get stop() {
+    return L.btn.stop;
+  },
+  get deactivate() {
+    return L.btn.deactivate;
+  },
+  get recreate() {
+    return L.btn.recreate;
+  },
+  get reconnect() {
+    return L.btn.reconnect;
+  },
   // Teams
-  createTeam: "새 팀 만들기",
-  createGroup: "팀 생성하기",
-  rename: "이름 변경",
-  deleteTeam: "팀 삭제하기",
-  addMember: "멤버 추가하기",
-  addTeam: "팀 추가하기",
+  get createTeam() {
+    return L.btn.createTeam;
+  },
+  get createGroup() {
+    return L.btn.createGroup;
+  },
+  get rename() {
+    return L.btn.rename;
+  },
+  get deleteTeam() {
+    return L.btn.deleteTeam;
+  },
+  get addMember() {
+    return L.btn.addMember;
+  },
+  get addTeam() {
+    return L.btn.addTeam;
+  },
   // Members / invitations
-  invite: "초대하기",
-  inviteMember: "멤버 초대하기",
-  sendInvitation: "초대 전송",
-  resendInvitationCode: "초대 코드 재전송",
-  cancelInvitation: "초대 취소",
-  cancelAction: "취소하기",
-  addTeamRole: "+ 팀/권한 추가",
+  get invite() {
+    return L.btn.invite;
+  },
+  get inviteMember() {
+    return L.btn.inviteMember;
+  },
+  get sendInvitation() {
+    return L.btn.sendInvitation;
+  },
+  get resendInvitationCode() {
+    return L.btn.resendInvitationCode;
+  },
+  get cancelInvitation() {
+    return L.btn.cancelInvitation;
+  },
+  get cancelAction() {
+    return L.btn.cancelAction;
+  },
+  get addTeamRole() {
+    return L.btn.addTeamRole;
+  },
   removeRow: "✕",
-  updateChanges: "변경사항 업데이트",
-  resetChanges: "변경사항 초기화",
-  deactivateSession: "세션 비활성화",
-  deleteMember: "멤버 삭제",
+  get updateChanges() {
+    return L.btn.updateChanges;
+  },
+  get resetChanges() {
+    return L.btn.resetChanges;
+  },
+  get deactivateSession() {
+    return L.btn.deactivateSession;
+  },
+  get deleteMember() {
+    return L.btn.deleteMember;
+  },
 } as const;
 
 /** PAGE_TITLES is the page/section vocabulary — shared by the main nav,
  * each page's <section aria-label>, and the workspace modal title, so the
  * same screen is never named two different things. */
 export const PAGE_TITLES = {
-  teams: "팀 관리",
-  users: "멤버 관리",
-  sessions: "세션 기록",
-  workspace: "워크스페이스 관리",
+  get teams() {
+    return L.nav.teams;
+  },
+  get users() {
+    return L.nav.users;
+  },
+  get sessions() {
+    return L.nav.sessions;
+  },
+  get workspace() {
+    return L.modal.workspaceManage;
+  },
 } as const;
 
 /** MODAL_TITLES is the single source of truth for ModalLayout titles across
@@ -81,23 +168,45 @@ export const PAGE_TITLES = {
 export const MODAL_TITLES = {
   // Workspace
   workspaceManage: PAGE_TITLES.workspace,
-  workspaceDelete: "워크스페이스 삭제",
-  workspaceOrphaned: "워크스페이스 재생성 필요",
-  workspaceReconnect: "워크스페이스 재연결 필요",
+  get workspaceDelete() {
+    return L.modal.workspaceDelete;
+  },
+  get workspaceOrphaned() {
+    return L.modal.workspaceOrphaned;
+  },
+  get workspaceReconnect() {
+    return L.modal.workspaceReconnect;
+  },
   // Teams
-  createTeam: "새 팀 만들기",
-  renameTeam: "팀 이름 변경",
-  deleteTeam: (teamName: string) => `팀 삭제 — ${teamName}`,
-  addMember: (teamName: string) => `멤버 추가 — ${teamName}`,
-  batchFailure: "일부 항목을 처리하지 못했습니다",
+  get createTeam() {
+    return L.btn.createTeam;
+  },
+  get renameTeam() {
+    return L.modal.renameTeam;
+  },
+  deleteTeam: (teamName: string) => L.modal.deleteTeam(teamName),
+  addMember: (teamName: string) => L.modal.addMember(teamName),
+  get batchFailure() {
+    return L.modal.batchFailure;
+  },
   // Members / roles / invitations
-  roleChange: "권한 변경",
-  removeMembership: "멤버십 제거",
-  inviteMember: "멤버 초대",
-  cancelInvitation: "초대 취소",
-  deactivateSession: "세션 비활성화",
-  deleteMemberSingle: (account: string) => `멤버 삭제 — ${account}`,
-  deleteMemberBulk: (count: number) => `멤버 삭제 (${count}명)`,
+  get roleChange() {
+    return L.modal.roleChange;
+  },
+  get removeMembership() {
+    return L.modal.removeMembership;
+  },
+  get inviteMember() {
+    return L.modal.inviteMember;
+  },
+  get cancelInvitation() {
+    return L.btn.cancelInvitation;
+  },
+  get deactivateSession() {
+    return L.btn.deactivateSession;
+  },
+  deleteMemberSingle: (account: string) => L.modal.deleteMemberSingle(account),
+  deleteMemberBulk: (count: number) => L.modal.deleteMemberBulk(count),
 } as const;
 
 export const PATH_LIST = {
@@ -110,61 +219,120 @@ export const PATH_LIST = {
   uiTest: "/ui-test",
 } as const;
 
+/* `title` is a getter so the sidebar labels re-resolve on a live language
+   switch — reading PAGE_TITLES.* eagerly would freeze the value here. */
 export const NAV_LIST = [
-  { title: PAGE_TITLES.teams, url: PATH_LIST.teams },
-  { title: PAGE_TITLES.users, url: PATH_LIST.users },
-  { title: PAGE_TITLES.sessions, url: PATH_LIST.sessions },
+  {
+    get title() {
+      return PAGE_TITLES.teams;
+    },
+    url: PATH_LIST.teams,
+  },
+  {
+    get title() {
+      return PAGE_TITLES.users;
+    },
+    url: PATH_LIST.users,
+  },
+  {
+    get title() {
+      return PAGE_TITLES.sessions;
+    },
+    url: PATH_LIST.sessions,
+  },
 ] as const;
 
 /** TABLE_HEADERS is the column-header copy shared across the list tables,
  * the modal tables, and the sort-option labels that mirror a column. */
 export const TABLE_HEADERS = {
-  memberName: "멤버 이름",
-  memberStatus: "멤버 상태",
-  team: "팀",
-  teamWithRole: "팀 (권한)",
-  role: "권한",
+  get memberName() {
+    return L.common.memberName;
+  },
+  get memberStatus() {
+    return L.common.memberStatus;
+  },
+  get team() {
+    return L.common.team;
+  },
+  get teamWithRole() {
+    return L.members.teamRoleHeader;
+  },
+  get role() {
+    return L.common.role;
+  },
   /* TreeDetailView's member table says 역할 while every other role column
      says 권한 — kept verbatim pending a copy decision; unifying is a
      one-line change here once decided. */
-  roleAlt: "역할",
-  roleChange: "권한 변경",
-  joinedAt: "합류일",
+  get roleAlt() {
+    return L.teams.roleHeader;
+  },
+  get roleChange() {
+    return L.modal.roleChange;
+  },
+  get joinedAt() {
+    return L.teams.joinedAt;
+  },
   account: "account",
-  reason: "사유",
-  user: "사용자",
-  issuedAt: "발급 시간",
-  lastAccess: "최근 접속 시간",
+  get reason() {
+    return L.members.reason;
+  },
+  get user() {
+    return L.common.users;
+  },
+  get issuedAt() {
+    return L.members.issuedAt;
+  },
+  get lastAccess() {
+    return L.members.lastAccessedAt;
+  },
 } as const;
 
 /** Form-field copy shared by the invite (SC-12) and add-member (SC-06)
  * forms — labels are also how tests and screen readers find the fields. */
 export const INPUT_LABELS = {
-  emailAccount: "이메일 (account)",
-  username: "사용자 이름 (username)",
+  get emailAccount() {
+    return L.teams.emailLabel;
+  },
+  get username() {
+    return L.teams.usernameLabel;
+  },
 } as const;
 
 export const PLACEHOLDERS = {
-  selectTeam: "팀 선택",
-  selectRole: "권한 선택",
+  get selectTeam() {
+    return L.teams.selectTeam;
+  },
+  get selectRole() {
+    return L.teams.selectRole;
+  },
   /** Team picker when every team is already joined (SC-13 add row). */
-  noAddableTeam: "추가할 팀 없음",
+  get noAddableTeam() {
+    return L.members.noTeamsToAdd;
+  },
   emailExample: "user@corp.com",
-  username: "사용자 이름",
+  get username() {
+    return L.teams.usernamePlaceholder;
+  },
 } as const;
 
 /** Icon/control aria-labels used on more than one screen — centralized so
  * assistive tech hears the same name everywhere (they had already drifted:
  * "전체 선택" vs "전체선택"). */
 export const ARIA_LABELS = {
-  selectAll: "전체 선택",
-  sort: "정렬",
+  get selectAll() {
+    return L.common.selectAll;
+  },
+  get sort() {
+    return L.common.sort;
+  },
 } as const;
 
 /** Shared Feedback copy — per-screen titles stay local; only the copy that
  * repeats across screens lives here. */
 export const FEEDBACK_TEXT = {
-  refreshRetry: "새로고침 후 다시 시도해 주세요.",
+  get refreshRetry() {
+    return L.common.refreshRetry;
+  },
 } as const;
 
 export const QUERY_KEYS = {

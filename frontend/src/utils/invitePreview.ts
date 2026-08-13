@@ -1,3 +1,4 @@
+import { L } from "@/locales";
 import { getTeamDescendantIds, getTeamName } from "@/utils/teamHierarchy";
 import type { TTeamTree } from "@/types/teamTypes";
 import type { TInviteSet } from "@/types/userTypes";
@@ -36,7 +37,9 @@ export const buildInvitePreview = (
       teamId: set.teamId,
       teamName: getTeamName(teams, set.teamId),
       role: set.role,
-      reason: "직접 지정",
+      get reason() {
+        return L.members.directlyAssigned;
+      },
       indent: false,
     });
     for (const descId of getTeamDescendantIds(teams, set.teamId)) {

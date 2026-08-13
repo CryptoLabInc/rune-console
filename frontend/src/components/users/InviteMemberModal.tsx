@@ -1,3 +1,4 @@
+import { L } from "@/locales";
 import { useRef, useState } from "react";
 
 import Button from "@/components/elements/Button";
@@ -8,7 +9,7 @@ import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
 import ModalTable from "@/components/users/ModalTable";
 import { buildTeamOptions } from "@/utils/buildTeamOptions";
-import { EMAIL_FORMAT_ERROR, EMAIL_PATTERN } from "@/utils/email";
+import { EMAIL_PATTERN } from "@/utils/email";
 import { buildInvitePreview } from "@/utils/invitePreview";
 import {
   isSubmittableUsername,
@@ -93,7 +94,7 @@ const InviteMemberModal = ({
 
   const validateEmail = () => {
     if (email.trim() && !EMAIL_PATTERN.test(email.trim()))
-      setEmailError(EMAIL_FORMAT_ERROR);
+      setEmailError(L.teams.invalidEmail);
   };
 
   /** Team options for one set — sourced from the real team tree (GET

@@ -1,3 +1,4 @@
+import { L } from "@/locales";
 import { useState } from "react";
 
 import Button from "@/components/elements/Button";
@@ -6,7 +7,7 @@ import Input from "@/components/elements/Input";
 import MemberStatus from "@/components/elements/MemberStatus";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
-import { EMAIL_FORMAT_ERROR, EMAIL_PATTERN } from "@/utils/email";
+import { EMAIL_PATTERN } from "@/utils/email";
 import {
   isSubmittableUsername,
   normalizeUsernameInput,
@@ -67,7 +68,7 @@ const AddMemberModal = ({
           maxLength={100}
           value={account}
           setValue={setAccount}
-          error={invalidFormat ? EMAIL_FORMAT_ERROR : undefined}
+          error={invalidFormat ? L.teams.invalidEmail : undefined}
         />
         <Input
           id="add-member-username"

@@ -1,3 +1,4 @@
+import { L } from "@/locales";
 import { useEffect, useMemo, useState } from "react";
 
 import Button from "@/components/elements/Button";
@@ -43,10 +44,7 @@ import {
   DEFAULT_PAGE_SIZE,
   TABLE_HEADERS,
 } from "@/constants/commonConstants";
-import {
-  ADD_MEMBER_REASON,
-  BATCH_REASON_FALLBACK,
-} from "@/constants/errorConstants";
+import { ADD_MEMBER_REASON } from "@/constants/errorConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import type { TTeamMemberRole, TTeamTree } from "@/types/teamTypes";
 import type { TRoleChange } from "@/types/userTypes";
@@ -247,7 +245,7 @@ const TreeDetailView = ({
         toBatchFailureRows(
           result.failed,
           accountOf,
-          () => BATCH_REASON_FALLBACK,
+          () => L.common.processFailed,
         ),
       );
     } else {

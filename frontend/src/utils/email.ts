@@ -4,4 +4,3 @@
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const EMAIL_FORMAT_ERROR = "올바른 이메일 형식이 아닙니다.";
