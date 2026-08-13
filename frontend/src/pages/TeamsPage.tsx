@@ -15,6 +15,7 @@ import {
   FEEDBACK_TEXT,
   PAGE_TITLES,
 } from "@/constants/commonConstants";
+import { L } from "@/locales";
 
 const feedbackPanel =
   "m-6 flex min-h-[340px] flex-col items-center justify-center gap-3 text-center";
@@ -115,7 +116,7 @@ const TeamsPage = () => {
       <section className={styles.panel} aria-label={PAGE_TITLES.teams}>
         <Feedback
           state="error"
-          title="팀 정보를 불러올 수 없습니다."
+          title={L.teams.teamsLoadError}
           description={FEEDBACK_TEXT.refreshRetry}
           className={feedbackPanel}
           action={
@@ -135,7 +136,11 @@ const TeamsPage = () => {
   return (
     <section className={styles.panel} aria-label={PAGE_TITLES.teams}>
       <div className={styles.header}>
-        <div className={styles.segment} role="group" aria-label="보기 전환">
+        <div
+          className={styles.segment}
+          role="group"
+          aria-label={L.teams.switchView}
+        >
           <button
             type="button"
             className={cn(
@@ -144,7 +149,7 @@ const TeamsPage = () => {
             aria-pressed={view === "tree"}
             onClick={() => setView("tree")}
           >
-            트리·상세
+            {L.teams.treeDetail}
           </button>
           <button
             type="button"
@@ -154,7 +159,7 @@ const TeamsPage = () => {
             aria-pressed={view === "org"}
             onClick={() => setView("org")}
           >
-            조직도
+            {L.teams.orgChartView}
           </button>
         </div>
         {/* Nothing to search when there are no teams (SC-06 state B). */}
@@ -162,7 +167,7 @@ const TeamsPage = () => {
           <SearchInput
             value={teamSearch}
             onChange={setTeamSearch}
-            placeholder="팀 검색"
+            placeholder={L.teams.searchTeams}
             maxLength={50}
             className="ml-auto w-55"
           />
@@ -172,8 +177,8 @@ const TeamsPage = () => {
       {teams.length === 0 ? (
         <Feedback
           state="empty"
-          title="새로운 팀을 만들어 주세요."
-          description="팀을 생성하면 멤버와 기억(memory)을 관리할 수 있습니다."
+          title={L.teams.emptyTitle}
+          description={L.teams.emptyDesc}
           className={feedbackPanel}
           action={
             <Button

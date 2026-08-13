@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 
 import { cn } from "@/utils/cn";
 import type { TDropdownOption } from "@/types/commonTypes";
+import { L } from "@/locales";
 
 const styles = {
   field: "grid w-full min-w-0 gap-2",
@@ -91,7 +92,7 @@ interface DropdownProps {
 const Dropdown = ({
   options,
   label,
-  placeholder = "선택",
+  placeholder = L.common.select,
   hint,
   error,
   value,

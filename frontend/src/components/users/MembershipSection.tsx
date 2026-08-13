@@ -16,6 +16,7 @@ import {
 } from "@/constants/commonConstants";
 import { ROLE_OPTIONS } from "@/constants/teamConstants";
 import type { TDropdownOption } from "@/types/commonTypes";
+import { L } from "@/locales";
 
 const styles = {
   sectionHead: "flex items-center gap-2",
@@ -79,7 +80,7 @@ const MembershipSection = ({
   return (
     <section className="flex flex-col gap-4">
       <div className={styles.sectionHead}>
-        <b className="text-md">소속 팀 ({memberships.length})</b>
+        <b className="text-md">{L.members.teamsHeading(memberships.length)}</b>
         {selectedCount > 0 && (
           <span className={styles.selectedCount}>{selectedCount} selected</span>
         )}
@@ -182,7 +183,7 @@ const MembershipSection = ({
             value={addTeamId}
             onChange={onAddTeamIdChange}
             size="sm"
-            ariaLabel="추가할 팀"
+            ariaLabel={L.members.teamToAdd}
             className="flex-1"
             disabled={addableTeams.length === 0}
           />
@@ -192,7 +193,7 @@ const MembershipSection = ({
             value={addRole}
             onChange={onAddRoleChange}
             size="sm"
-            ariaLabel="추가할 role"
+            ariaLabel={L.members.roleToAdd}
             className="w-24"
             /* No team left to join (all already joined) → the role
                picker has nothing to apply to, so disable it too. */

@@ -1,4 +1,5 @@
 import { MODAL_TITLES } from "@/constants/commonConstants";
+import { L } from "@/locales";
 
 /**
  * showNotice copy grouped per flow — {title, success, failure, ...} so a
@@ -10,55 +11,103 @@ import { MODAL_TITLES } from "@/constants/commonConstants";
  */
 export const NOTICE_TEXT = {
   resendInvitation: {
-    title: "초대 코드 재전송",
-    success: "초대 코드를 재전송했습니다.",
-    failure: "초대 코드 재전송에 실패했습니다. 다시 시도해 주세요.",
+    get title() {
+      return L.btn.resendInvitationCode;
+    },
+    get success() {
+      return L.members.inviteCodeResent;
+    },
+    get failure() {
+      return L.members.resendCodeFailed;
+    },
     /** Per-account reason row in the batch-failure modal. */
-    failedReason: "재전송 실패",
+    get failedReason() {
+      return L.members.resendFailedShort;
+    },
   },
   addMembership: {
-    title: "팀 추가",
-    success: "팀에 추가되었습니다.",
-    alreadyMember: "이미 소속된 팀입니다.",
-    failure: "팀 추가에 실패했습니다. 다시 시도해 주세요.",
+    get title() {
+      return L.members.addTeamTitle;
+    },
+    get success() {
+      return L.members.addedToTeam;
+    },
+    get alreadyMember() {
+      return L.members.alreadyTeamMember;
+    },
+    get failure() {
+      return L.members.addTeamFailed;
+    },
   },
   /* Role-change and remove-failure results render INSIDE
      RoleChangeConfirmModal/MembershipRemoveModal (SC-06 E-1/E-2) — only
      the full-success removal toast goes through showNotice. */
   removeMembership: {
     title: MODAL_TITLES.removeMembership,
-    success: "멤버십이 제거되었습니다.",
+    get success() {
+      return L.teams.membershipsRemoved;
+    },
   },
   deactivateSession: {
     title: MODAL_TITLES.deactivateSession,
-    success: "세션을 비활성화했습니다.",
-    alreadyExpired: "이미 만료된 세션입니다.",
-    failure: "세션 비활성화에 실패했습니다. 다시 시도해 주세요.",
+    get success() {
+      return L.members.sessionDeactivated;
+    },
+    get alreadyExpired() {
+      return L.members.sessionAlreadyExpired;
+    },
+    get failure() {
+      return L.members.deactivateFailed;
+    },
   },
   cancelInvitation: {
     title: MODAL_TITLES.cancelInvitation,
-    success: "초대를 취소했습니다.",
-    nothingToCancel: "취소할 초대가 없습니다.",
-    failure: "초대 취소에 실패했습니다. 다시 시도해 주세요.",
+    get success() {
+      return L.members.invitationCanceled;
+    },
+    get nothingToCancel() {
+      return L.members.noInvitationToCancel;
+    },
+    get failure() {
+      return L.members.cancelInvitationFailed;
+    },
   },
   createTeam: {
-    title: "팀 생성",
-    success: "팀이 생성되었습니다.",
+    get title() {
+      return L.teams.createTeamTitle;
+    },
+    get success() {
+      return L.teams.teamCreated;
+    },
   },
   renameTeam: {
     title: MODAL_TITLES.renameTeam,
-    success: "팀 이름이 변경되었습니다.",
+    get success() {
+      return L.teams.teamRenamed;
+    },
   },
   deleteTeam: {
-    title: "팀 삭제",
-    success: "팀이 삭제되었습니다.",
+    get title() {
+      return L.teams.deleteTeamTitle;
+    },
+    get success() {
+      return L.teams.teamDeleted;
+    },
   },
   addTeamMember: {
-    title: "멤버 추가",
-    success: "멤버를 추가했습니다.",
+    get title() {
+      return L.teams.addMemberTitle;
+    },
+    get success() {
+      return L.teams.memberAdded;
+    },
   },
   deleteMember: {
-    title: "멤버 삭제",
-    success: "멤버를 삭제했습니다.",
+    get title() {
+      return L.btn.deleteMember;
+    },
+    get success() {
+      return L.members.membersDeleted;
+    },
   },
 } as const;

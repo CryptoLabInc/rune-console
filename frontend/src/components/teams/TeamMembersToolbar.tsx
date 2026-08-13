@@ -1,5 +1,6 @@
 import Button from "@/components/elements/Button";
 import { BTN_TEXT } from "@/constants/commonConstants";
+import { L } from "@/locales";
 
 const styles = {
   row: "flex items-center gap-2",
@@ -32,7 +33,7 @@ const TeamMembersToolbar = ({
 }: TeamMembersToolbarProps) => {
   return (
     <div className={styles.row}>
-      <h3 className={styles.title}>멤버 ({total})</h3>{" "}
+      <h3 className={styles.title}>{L.teams.membersHeading(total)}</h3>{" "}
       <div className={styles.actions}>
         {/* Drops every staged (not yet applied) dropdown pick back to
             its saved role — the committed savedRoles baseline stays. */}

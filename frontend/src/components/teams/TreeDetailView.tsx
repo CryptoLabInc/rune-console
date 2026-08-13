@@ -43,13 +43,11 @@ import {
   DEFAULT_PAGE_SIZE,
   TABLE_HEADERS,
 } from "@/constants/commonConstants";
-import {
-  ADD_MEMBER_REASON,
-  BATCH_REASON_FALLBACK,
-} from "@/constants/errorConstants";
+import { ADD_MEMBER_REASON } from "@/constants/errorConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import type { TTeamMemberRole, TTeamTree } from "@/types/teamTypes";
 import type { TRoleChange } from "@/types/userTypes";
+import { L } from "@/locales";
 
 const styles = {
   body: "flex min-h-[340px] flex-1",
@@ -155,12 +153,14 @@ const TreeDetailView = ({
      immediate fallback while the detail loads. */
   const flatTeam = flatById.get(selectedTeam.id);
   const parentName = detail?.parentId
-    ? (flatById.get(detail.parentId)?.name ?? "없음")
+    ? (flatById.get(detail.parentId)?.name ?? L.common.none)
     : flatTeam?.parentId
-      ? (flatById.get(flatTeam.parentId)?.name ?? "없음")
-      : "없음";
+      ? (flatById.get(flatTeam.parentId)?.name ?? L.common.none)
+      : L.common.none;
   const childCount = detail?.children.length ?? flatTeam?.childCount ?? 0;
-  const childrenLabel = childCount ? `${childCount}개` : "없음";
+  const childrenLabel = childCount
+    ? L.teams.countItems(childCount)
+    : L.common.none;
   const memberCount = detail?.memberCount ?? selectedTeam.members;
 
   /* Modals (SC-07~10 + SC-06 state E). All confirm handlers below call
@@ -210,7 +210,7 @@ const TreeDetailView = ({
         },
         onError: async (res) => {
           const code = await parseErrorCode(res);
-          setAddError(ADD_MEMBER_REASON[code] ?? "멤버 추가에 실패했습니다.");
+          setAddError(ADD_MEMBER_REASON[code] ?? L.teams.addMemberFailed);
         },
       },
     );
@@ -247,7 +247,7 @@ const TreeDetailView = ({
         toBatchFailureRows(
           result.failed,
           accountOf,
-          () => BATCH_REASON_FALLBACK,
+          () => L.common.processFailed,
         ),
       );
     } else {
@@ -292,7 +292,7 @@ const TreeDetailView = ({
     <div className={styles.body}>
       {/* Left panel — create + tree (SC-06 no.3–5); search lives in the
           TeamsPage header */}
-      <aside className={styles.side} aria-label="팀 트리">
+      <aside className={styles.side} aria-label={L.teams.teamTree}>
         <Button
           btnText={BTN_TEXT.createGroup}
           btnSize="sm"

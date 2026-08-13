@@ -5,13 +5,10 @@ import Input from "@/components/elements/Input";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
 import { BTN_TEXT, MODAL_TITLES } from "@/constants/commonConstants";
-import { TEAM_NAME_DUPLICATE_TEXT } from "@/constants/errorConstants";
 import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
-import {
-  TEAM_NAME_PATTERN,
-  TEAM_NAME_RULE_TEXT,
-} from "@/constants/teamConstants";
+import { TEAM_NAME_PATTERN } from "@/constants/teamConstants";
 import type { TTeamTree } from "@/types/teamTypes";
+import { L } from "@/locales";
 
 interface RenameTeamModalProps {
   currentName: string;
@@ -58,9 +55,9 @@ const RenameTeamModal = ({
     trimmed.length > 0 && isChanged && !isInvalidFormat && !isDuplicate;
 
   const nameError = isInvalidFormat
-    ? TEAM_NAME_RULE_TEXT
+    ? L.teams.teamNameRule
     : isDuplicate
-      ? TEAM_NAME_DUPLICATE_TEXT
+      ? L.teams.dupName
       : undefined;
 
   return (
@@ -68,11 +65,11 @@ const RenameTeamModal = ({
       <div className={MODAL_STYLE_VAR.body}>
         <Input
           id="rename-team-name"
-          labelText="팀 이름"
+          labelText={L.teams.teamName}
           maxLength={50}
           value={name}
           setValue={setName}
-          hint={TEAM_NAME_RULE_TEXT}
+          hint={L.teams.teamNameRule}
           error={nameError}
         />
         {error && <Notice tone="error">{error}</Notice>}

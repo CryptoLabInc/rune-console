@@ -10,8 +10,7 @@ import {
 } from "@/constants/commonConstants";
 import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import type { TMemberDeleteTarget } from "@/types/userTypes";
-
-const DELETE_FAILED_MESSAGE = "멤버 삭제에 실패했습니다. 다시 시도해 주세요.";
+import { L } from "@/locales";
 
 /** The team/role table, or the empty-state line when the target belongs
     to no team (no group-role membership). */
@@ -26,7 +25,7 @@ const memberTeams = (memberships: TMemberDeleteTarget["memberships"]) =>
     />
   ) : (
     <p className="text-muted-foreground border p-2 text-sm">
-      소속된 팀이 없습니다.
+      {L.members.noTeams}
     </p>
   );
 
@@ -76,7 +75,7 @@ const MemberDeleteModal = ({
   if (failed) {
     return (
       <ModalLayout title={title} isOpen>
-        <p className={MODAL_STYLE_VAR.message}>{DELETE_FAILED_MESSAGE}</p>
+        <p className={MODAL_STYLE_VAR.message}>{L.members.deleteFailed}</p>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"
@@ -93,15 +92,13 @@ const MemberDeleteModal = ({
         {single ? (
           <>
             <p className="text-base">
-              {single.account} 계정을 삭제하며, 아래 팀에서 제거됩니다:
+              {L.members.deleteSingleIntro(single.account)}
             </p>
             {memberTeams(single.memberships)}
           </>
         ) : (
           <>
-            <p className="text-base">
-              다음 멤버의 계정을 삭제하며, 아래 팀에서 제거됩니다:
-            </p>
+            <p className="text-base">{L.members.deleteBulkIntro}</p>
             {targets.map((target) => (
               <div key={target.account} className="flex flex-col gap-2">
                 <b className="text-sm">{target.account}</b>

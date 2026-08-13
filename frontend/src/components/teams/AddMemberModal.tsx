@@ -6,7 +6,7 @@ import Input from "@/components/elements/Input";
 import MemberStatus from "@/components/elements/MemberStatus";
 import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
-import { EMAIL_FORMAT_ERROR, EMAIL_PATTERN } from "@/utils/email";
+import { EMAIL_PATTERN } from "@/utils/email";
 import {
   isSubmittableUsername,
   normalizeUsernameInput,
@@ -21,6 +21,7 @@ import {
 } from "@/constants/commonConstants";
 import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import { ROLE_OPTIONS } from "@/constants/teamConstants";
+import { L } from "@/locales";
 
 interface AddMemberModalProps {
   teamName: string;
@@ -67,7 +68,7 @@ const AddMemberModal = ({
           maxLength={100}
           value={account}
           setValue={setAccount}
-          error={invalidFormat ? EMAIL_FORMAT_ERROR : undefined}
+          error={invalidFormat ? L.teams.invalidEmail : undefined}
         />
         <Input
           id="add-member-username"
@@ -79,19 +80,19 @@ const AddMemberModal = ({
           error={usernameError}
         />
         <Dropdown
-          label="권한 (role)"
+          label={L.teams.roleLabel}
           placeholder={PLACEHOLDERS.selectRole}
           options={ROLE_OPTIONS}
           value={role}
           onChange={setRole}
         />
         <Notice tone="info">
-          초대받은 사용자가 rune을 연결하면{" "}
+          {L.teams.invitePrefix}
           <MemberStatus
             status="online"
             className="bg-mint/10 h-auto cursor-default gap-1 rounded-sm px-1.5 py-0.5 align-middle"
           />
-          으로 전환됩니다.
+          {L.teams.inviteSuffix}
         </Notice>
         {error && <Notice tone="error">{error}</Notice>}
       </div>

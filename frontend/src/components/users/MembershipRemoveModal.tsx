@@ -11,8 +11,7 @@ import {
 } from "@/constants/commonConstants";
 import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import type { TMembershipRemoveTarget } from "@/types/userTypes";
-
-const REMOVE_FAILED_MESSAGE = `멤버십 제거에 실패했습니다. 다시 시도해 주세요.`;
+import { L } from "@/locales";
 
 interface MembershipRemoveModalProps {
   /** SC-06 entry: selected members × current team · SC-13 entry:
@@ -58,7 +57,7 @@ const MembershipRemoveModal = ({
   if (failed) {
     return (
       <ModalLayout title={MODAL_TITLES.removeMembership} isOpen>
-        <p className={MODAL_STYLE_VAR.message}>{REMOVE_FAILED_MESSAGE}</p>
+        <p className={MODAL_STYLE_VAR.message}>{L.members.removeFailed}</p>
         <Button
           btnText={BTN_TEXT.close}
           btnSize="md"
@@ -72,7 +71,7 @@ const MembershipRemoveModal = ({
   return (
     <ModalLayout title={MODAL_TITLES.removeMembership} isOpen>
       <div className="flex flex-col gap-4">
-        <p className="text-base">다음 멤버십을 제거합니다:</p>
+        <p className="text-base">{L.teams.removeIntro}</p>
         <ModalTable
           head={[TABLE_HEADERS.account, TABLE_HEADERS.team, TABLE_HEADERS.role]}
           rows={targets.map((target) => [
@@ -81,11 +80,7 @@ const MembershipRemoveModal = ({
             target.role,
           ])}
         />
-        {subteamNotice && (
-          <Notice>
-            하위 팀 소속은 유지됩니다. 필요할 경우 개별 선택 후 제거하세요.
-          </Notice>
-        )}
+        {subteamNotice && <Notice>{L.teams.removeKeepSubteams}</Notice>}
       </div>
       <div className={MODAL_STYLE_VAR.footer}>
         <Button

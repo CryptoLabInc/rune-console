@@ -8,7 +8,7 @@ import Notice from "@/components/elements/Notice";
 import ModalLayout from "@/components/layout/ModalLayout";
 import ModalTable from "@/components/users/ModalTable";
 import { buildTeamOptions } from "@/utils/buildTeamOptions";
-import { EMAIL_FORMAT_ERROR, EMAIL_PATTERN } from "@/utils/email";
+import { EMAIL_PATTERN } from "@/utils/email";
 import { buildInvitePreview } from "@/utils/invitePreview";
 import {
   isSubmittableUsername,
@@ -27,6 +27,7 @@ import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import { ROLE_OPTIONS } from "@/constants/teamConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 import type { TInvitePayload, TInviteResult } from "@/types/userTypes";
+import { L } from "@/locales";
 
 const styles = {
   fieldLabel: "text-sm font-semibold",
@@ -35,10 +36,6 @@ const styles = {
   roleSlot: "w-[120px] flex-none",
   removeSlot: "w-9 flex-none",
 };
-
-const DUPLICATE_ACCOUNT_ERROR =
-  "이미 등록된 계정입니다. 멤버 추가 또는 초대 코드 재전송을 사용하세요.";
-const SEND_FAILED_MESSAGE = "초대 전송에 실패했습니다. 다시 시도해 주세요.";
 
 /** One editable team/role set row; id keys the row across removals. */
 type TSetDraft = { id: number; teamId: string; role: string };
@@ -93,7 +90,7 @@ const InviteMemberModal = ({
 
   const validateEmail = () => {
     if (email.trim() && !EMAIL_PATTERN.test(email.trim()))
-      setEmailError(EMAIL_FORMAT_ERROR);
+      setEmailError(L.teams.invalidEmail);
   };
 
   /** Team options for one set — sourced from the real team tree (GET
@@ -137,7 +134,7 @@ const InviteMemberModal = ({
       });
       if (result === "success") onClose();
       else if (result === "duplicate-account")
-        setEmailError(DUPLICATE_ACCOUNT_ERROR);
+        setEmailError(L.members.duplicateAccount);
       else setSendFailed(true);
     } catch {
       setSendFailed(true);
@@ -175,7 +172,7 @@ const InviteMemberModal = ({
         />
 
         <div className="flex flex-col gap-2">
-          <span className={styles.fieldLabel}>팀 / 권한</span>
+          <span className={styles.fieldLabel}>{L.members.teamRole}</span>
           {sets.map((set, index) => (
             <div key={set.id} className={styles.setRow}>
               <div className={styles.teamSlot}>
@@ -184,7 +181,7 @@ const InviteMemberModal = ({
                   placeholder={PLACEHOLDERS.selectTeam}
                   value={set.teamId}
                   onChange={(teamId) => patchSet(set.id, { teamId })}
-                  ariaLabel={`세트 ${index + 1} 팀`}
+                  ariaLabel={L.members.setTeamAria(index + 1)}
                 />
               </div>
               <div className={styles.roleSlot}>
@@ -193,7 +190,7 @@ const InviteMemberModal = ({
                   placeholder={PLACEHOLDERS.selectRole}
                   value={set.role}
                   onChange={(role) => patchSet(set.id, { role })}
-                  ariaLabel={`세트 ${index + 1} role`}
+                  ariaLabel={L.members.setRoleAria(index + 1)}
                 />
               </div>
               {/* First set is required and carries no remove button
@@ -224,7 +221,9 @@ const InviteMemberModal = ({
 
         {showPreview && (
           <div className="flex flex-col gap-2">
-            <span className={styles.fieldLabel}>하위 팀 권한 미리보기</span>
+            <span className={styles.fieldLabel}>
+              {L.members.subteamPreview}
+            </span>
             <ModalTable
               head={[
                 TABLE_HEADERS.team,
@@ -241,17 +240,16 @@ const InviteMemberModal = ({
         )}
 
         {sendFailed ? (
-          <Notice tone="error">{SEND_FAILED_MESSAGE}</Notice>
+          <Notice tone="error">{L.members.sendFailed}</Notice>
         ) : (
           <Notice>
-            초대 시 사용자에게 초대 코드가 발송되어 사용자가 24시간 내 rune을
-            연결하면{" "}
+            {L.members.invitePrefix}
             <MemberStatus
               status="online"
               className="h-auto cursor-default p-0 align-middle"
-            />{" "}
-            으로 전환됩니다. <br /> 미연결 시 코드가 만료되고 초대 코드
-            재전송으로 사용자를 다시 초대할 수 있습니다.
+            />
+            {L.members.inviteSuffix}
+            <br /> {L.members.inviteExpiry}
           </Notice>
         )}
       </div>
