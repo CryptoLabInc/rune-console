@@ -11,6 +11,7 @@ import {
 import { useWorkspaceStore } from "@/state/store/workspaceStore";
 import { WORKSPACE_STATUS } from "@/constants/apiConstants";
 import { PAGE_TITLES, PATH_LIST } from "@/constants/commonConstants";
+import { L } from "@/locales";
 
 const panelClass =
   "m-6 flex min-h-[340px] flex-col items-center justify-center gap-3 text-center";
@@ -89,25 +90,25 @@ const WorkspacePage = () => {
       {creating ? (
         <Feedback
           state="loading"
-          title="워크스페이스를 생성하는 중입니다…"
-          description="생성까지 약 3~5분 정도 소요됩니다."
+          title={L.workspace.creatingTitle}
+          description={L.workspace.creatingDesc}
           className={panelClass}
         />
       ) : createMutation.isError ? (
         <Feedback
           state="error"
-          title="워크스페이스 생성 실패"
-          description="워크스페이스를 생성할 수 없습니다. 다시 시도해 주세요."
+          title={L.workspace.createFailedTitle}
+          description={L.workspace.createFailedDesc}
           className={panelClass}
-          action={createButton("워크스페이스 생성", handleCreate)}
+          action={createButton(L.workspace.createWorkspace, handleCreate)}
         />
       ) : (
         <Feedback
           state="empty"
-          title="생성된 워크스페이스가 없습니다."
-          description="워크스페이스를 생성하면 기억(memory)을 저장할 수 있습니다."
+          title={L.workspace.emptyTitle}
+          description={L.workspace.emptyDesc}
           className={panelClass}
-          action={createButton("워크스페이스 생성", handleCreate)}
+          action={createButton(L.workspace.createWorkspace, handleCreate)}
         />
       )}
     </section>

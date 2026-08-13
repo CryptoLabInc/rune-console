@@ -1,5 +1,5 @@
-import { L } from "@/locales";
 import { ERROR_CODES } from "@/constants/apiConstants";
+import { L } from "@/locales";
 
 /**
  * Backend error code → user-facing copy, shared by every screen that surfaces

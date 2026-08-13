@@ -20,6 +20,7 @@ import {
 import { ROLE_OPTIONS } from "@/constants/teamConstants";
 import { CHIP_STATUS } from "@/constants/userConstants";
 import type { TTeamMember } from "@/types/teamTypes";
+import { L } from "@/locales";
 
 const styles = {
   /* The detail panel is narrower than the users page — typical names
@@ -78,7 +79,7 @@ const TeamMembersTable = ({
       scrollClassName="min-h-[526px]"
       foot={
         <TableFoot
-          info={`총 ${total}명 · ${DEFAULT_PAGE_SIZE}명/페이지`}
+          info={L.teams.memberPageInfo(total, DEFAULT_PAGE_SIZE)}
           className="flex-row items-center"
         >
           <div className="flex flex-col items-end gap-3">
@@ -118,12 +119,9 @@ const TeamMembersTable = ({
         {isPending ? (
           <TableLoadingRow colSpan={5} />
         ) : isError ? (
-          <TableErrorRow
-            message="멤버 목록을 불러올 수 없습니다."
-            colSpan={5}
-          />
+          <TableErrorRow message={L.teams.membersLoadError} colSpan={5} />
         ) : total === 0 ? (
-          <TableEmptyRow colSpan={5}>멤버가 없습니다.</TableEmptyRow>
+          <TableEmptyRow colSpan={5}>{L.teams.noMembers}</TableEmptyRow>
         ) : (
           members.map((member) => (
             <TableRow
@@ -135,7 +133,7 @@ const TeamMembersTable = ({
                 <Checkbox
                   checked={selectedIds.has(member.userId)}
                   onChange={(checked) => onToggleOne(member.userId, checked)}
-                  ariaLabel={`${member.account} 선택`}
+                  ariaLabel={L.common.selectName(member.account)}
                 />
               </TableCell>
               <TableCell className={styles.usernameCell}>

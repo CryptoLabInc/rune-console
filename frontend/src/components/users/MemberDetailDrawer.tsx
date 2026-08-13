@@ -26,6 +26,7 @@ import { INVITATION_STATUS_VAR } from "@/constants/styleConstants";
 import { CHIP_STATUS } from "@/constants/userConstants";
 import type { TBatchResult, TTeamTree } from "@/types/teamTypes";
 import type { TUserListItem } from "@/types/userTypes";
+import { L } from "@/locales";
 
 const styles = {
   /* Status chip sits to the left of the access-time text, vertically
@@ -40,14 +41,14 @@ const styles = {
     an online member shows last access; otherwise the invitation axis drives it. */
 const subtitleFor = (user: TUserListItem): string => {
   if (user.sessionStatus === SESSION_STATUS.online) {
-    return `최근 접속 ${formatDate(user.lastAccessAt)}`;
+    return L.members.lastAccessed(formatDate(user.lastAccessAt));
   }
   switch (user.invitationStatus) {
     case INVITATION_STATUS.redeemed:
-      return "초대 코드 사용됨 · 연결 대기 중";
+      return L.members.redeemedAwaiting;
     case INVITATION_STATUS.pending:
     case INVITATION_STATUS.expired:
-      return `최근 초대 코드 발송 ${formatDateTime(user.lastInvitedAt)}`;
+      return L.members.lastInviteSentAt(formatDateTime(user.lastInvitedAt));
   }
 };
 
@@ -219,7 +220,7 @@ const MemberDetailDrawer = ({
 
         <section className="flex flex-col gap-4">
           <div className={styles.sectionHead}>
-            <b className="text-md">멤버 관리</b>
+            <b className="text-md">{L.nav.users}</b>
           </div>
 
           {/* Account-level actions: 세션 비활성화 · 멤버 삭제 (SC-15) —

@@ -45,6 +45,7 @@ import {
 } from "@/constants/commonConstants";
 import type { TDropdownOption } from "@/types/commonTypes";
 import type { TTeamMemberRole, TTeamTree } from "@/types/teamTypes";
+import { L } from "@/locales";
 
 const styles = {
   page: "flex flex-col gap-3.5 p-4",
@@ -53,21 +54,21 @@ const styles = {
 /* Filter/sort option sets (SC-11 no.2–3). "all" stands in for 전체. The list
    shows only the session axis, so the filter matches it. */
 const STATUS_OPTIONS: TDropdownOption[] = [
-  { value: "all", label: "전체" },
-  { value: SESSION_STATUS.online, label: "온라인" },
-  { value: SESSION_STATUS.offline, label: "오프라인" },
+  { value: "all", label: L.common.all },
+  { value: SESSION_STATUS.online, label: L.status.member.online },
+  { value: SESSION_STATUS.offline, label: L.status.member.offline },
 ];
 
 /* Depth indent stripped — the 150px filter trigger can't fit deep-tree
    indentation (it forces horizontal scrolling in the menu); teams list
    flush left in tree order and long names truncate with an ellipsis. */
 const buildGroupOptions = (teams: TTeamTree): TDropdownOption[] => [
-  { value: "all", label: "전체" },
+  { value: "all", label: L.common.all },
   ...buildTeamOptions(teams).map(({ value, label }) => ({ value, label })),
 ];
 
 const SORT_OPTIONS: TDropdownOption[] = [
-  { value: "last_invited", label: "최근 초대 코드 발송" },
+  { value: "last_invited", label: L.members.lastInviteSent },
   { value: "username", label: TABLE_HEADERS.memberName },
 ];
 
@@ -171,7 +172,7 @@ const UsersPage = () => {
       <section className={styles.page} aria-label={PAGE_TITLES.users}>
         <Feedback
           state="error"
-          title="멤버 정보를 불러올 수 없습니다."
+          title={L.members.membersLoadError}
           description={FEEDBACK_TEXT.refreshRetry}
           action={
             <Button
@@ -194,8 +195,8 @@ const UsersPage = () => {
       <section className={styles.page} aria-label={PAGE_TITLES.users}>
         <Feedback
           state="empty"
-          title="아직 초대한 멤버가 없습니다"
-          description="멤버를 초대하면 초대 코드가 이메일로 발송됩니다"
+          title={L.members.noMembersYet}
+          description={L.members.inviteHint}
           action={
             <Button
               btnText={BTN_TEXT.inviteMember}
@@ -246,7 +247,7 @@ const UsersPage = () => {
         }
         foot={
           <TableFoot
-            info={`총 ${total}명 · ${DEFAULT_PAGE_SIZE}명/페이지`}
+            info={L.teams.memberPageInfo(total, DEFAULT_PAGE_SIZE)}
             className="flex-row"
           >
             <Pagination
@@ -285,7 +286,7 @@ const UsersPage = () => {
         <tbody>
           {usersQuery.isPending && <TableLoadingRow colSpan={4} />}
           {!usersQuery.isPending && users.length === 0 && (
-            <TableEmptyRow colSpan={4}>검색 결과가 없습니다.</TableEmptyRow>
+            <TableEmptyRow colSpan={4}>{L.common.noResults}</TableEmptyRow>
           )}
           {users.map((user) => (
             <UserRow

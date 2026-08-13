@@ -1,4 +1,3 @@
-import { L } from "@/locales";
 /**
  * Style variant maps for shared element components (envector pattern).
  * Visual values are translated from UIKIT modules/rune-ui-buttons and
@@ -7,6 +6,7 @@ import { L } from "@/locales";
 import type { TMemberStatus } from "@/types/commonTypes";
 import type { TInvitationStatus } from "@/types/teamTypes";
 import type { TWorkspaceStatus } from "@/types/workspaceTypes";
+import { L } from "@/locales";
 
 /** Status → chip/badge presentation (label + text color). */
 type TStatusStyle = { label: string; color: string };
@@ -130,7 +130,10 @@ export const INVITATION_STATUS_VAR = {
 } satisfies Record<TInvitationStatus, TStatusStyle>;
 
 export const WORKSPACE_STATUS_VAR = {
-  provisioning: statusVar(() => L.status.workspace.provisioning, "text-warning"),
+  provisioning: statusVar(
+    () => L.status.workspace.provisioning,
+    "text-warning",
+  ),
   running: statusVar(() => L.status.workspace.running, "text-mint"),
   stopping: statusVar(() => L.status.workspace.stopping, "text-warning"),
   stopped: statusVar(() => L.status.workspace.stopped, "text-faint"),

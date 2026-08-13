@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 
 import { cn } from "@/utils/cn";
-import { L } from "@/locales";
 import type { TTeamNode, TTeamTree } from "@/types/teamTypes";
+import { L } from "@/locales";
 
 const styles = {
   /* Viewport-bound pannable window: height caps at the screen minus the

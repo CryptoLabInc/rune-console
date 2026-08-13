@@ -1,4 +1,5 @@
 import { L } from "@/locales";
+
 /** BRAND_WORDMARK is the displayed product wordmark, shared by the navbars
  * (SC-01/SC-03) and the login card heading (SC-01) so the brand string has a
  * single source of truth. */

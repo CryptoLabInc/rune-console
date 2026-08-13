@@ -1,3 +1,5 @@
+import { L } from "@/locales";
+
 interface TableLoadingRowProps {
   colSpan: number;
 }
@@ -14,7 +16,7 @@ const TableLoadingRow = ({ colSpan }: TableLoadingRowProps) => {
         colSpan={colSpan}
         className="text-faint px-3 py-8 text-center text-sm"
       >
-        불러오는 중…
+        {L.common.loading}
       </td>
     </tr>
   );

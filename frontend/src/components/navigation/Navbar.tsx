@@ -6,7 +6,6 @@ import WorkspaceStatus from "@/components/elements/WorkspaceStatus";
 import LanguageToggle from "@/components/navigation/LanguageToggle";
 import ProfileMenu from "@/components/navigation/ProfileMenu";
 import WorkspaceModal from "@/components/workspace/WorkspaceModal";
-import { L } from "@/locales";
 import { useSessionQuery } from "@/hooks/queries/useSessionQuery";
 import { useWorkspaceQuery } from "@/hooks/queries/useWorkspaceQuery";
 import { postLogout } from "@/api/authAPIs";
@@ -16,6 +15,7 @@ import {
   PATH_LIST,
   QUERY_KEYS,
 } from "@/constants/commonConstants";
+import { L } from "@/locales";
 
 /**
  * Navbar is the console top bar (SC-03). Its background and bottom border

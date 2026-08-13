@@ -1,6 +1,7 @@
 import Button from "@/components/elements/Button";
 import { formatDate } from "@/utils/formatDate";
 import { BTN_TEXT } from "@/constants/commonConstants";
+import { L } from "@/locales";
 
 const styles = {
   card: "border-border bg-surface rounded-lg border px-4 py-3",
@@ -50,8 +51,12 @@ const TeamCard = ({
         />
       </div>
       <p className={styles.meta}>
-        상위 팀: {parentName} | 하위 팀: {childrenLabel} | 멤버: {memberCount}명
-        | 생성일: {formatDate(createdAt)}
+        {L.teams.teamMeta(
+          parentName,
+          childrenLabel,
+          memberCount,
+          formatDate(createdAt),
+        )}
       </p>
     </div>
   );

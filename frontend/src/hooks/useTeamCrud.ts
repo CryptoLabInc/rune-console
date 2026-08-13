@@ -9,6 +9,7 @@ import { parseErrorCode } from "@/api/parseError";
 import { useNoticeStore } from "@/state/store/noticeStore";
 import { TEAM_REASON } from "@/constants/errorConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
+import { L } from "@/locales";
 
 interface UseTeamCrudOptions {
   /** Rename/delete target — pass "" when only the create flow is used
@@ -56,7 +57,7 @@ export const useTeamCrud = ({
         },
         onError: async (res) => {
           const code = await parseErrorCode(res);
-          setTeamError(TEAM_REASON[code] ?? "팀 생성에 실패했습니다.");
+          setTeamError(TEAM_REASON[code] ?? L.teams.createTeamFailed);
         },
       },
     );
@@ -77,7 +78,7 @@ export const useTeamCrud = ({
         },
         onError: async (res) => {
           const code = await parseErrorCode(res);
-          setTeamError(TEAM_REASON[code] ?? "이름 변경에 실패했습니다.");
+          setTeamError(TEAM_REASON[code] ?? L.teams.renameFailed);
         },
       },
     );
@@ -102,7 +103,7 @@ export const useTeamCrud = ({
         },
         onError: async (res) => {
           const code = await parseErrorCode(res);
-          setTeamError(TEAM_REASON[code] ?? "팀 삭제에 실패했습니다.");
+          setTeamError(TEAM_REASON[code] ?? L.teams.deleteFailed);
         },
       },
     );

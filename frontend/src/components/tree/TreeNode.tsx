@@ -4,6 +4,7 @@ import IconMinus from "@/components/icons/IconMinus";
 import IconPlus from "@/components/icons/IconPlus";
 import { cn } from "@/utils/cn";
 import type { TTeamViewNode } from "@/types/teamTypes";
+import { L } from "@/locales";
 
 const styles = {
   row: "grid grid-cols-[24px_1fr] items-center rounded-sm pl-[calc(var(--tree-depth)*18px)] transition-[background-color] duration-[160ms]",
@@ -81,7 +82,11 @@ const TreeNode = ({
           <button
             type="button"
             className={styles.toggle}
-            aria-label={`${node.name} ${isOpen ? "접기" : "펼치기"}`}
+            aria-label={
+              isOpen
+                ? L.teams.collapseName(node.name)
+                : L.teams.expandName(node.name)
+            }
             aria-expanded={isOpen}
             onClick={() => onToggle(node.id)}
           >

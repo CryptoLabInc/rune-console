@@ -1,5 +1,5 @@
-import { L } from "@/locales";
 import { MODAL_TITLES } from "@/constants/commonConstants";
+import { L } from "@/locales";
 
 /**
  * showNotice copy grouped per flow — {title, success, failure, ...} so a

@@ -7,12 +7,12 @@ import PublicNavbar from "@/components/navigation/PublicNavbar";
 import { useSessionQuery } from "@/hooks/queries/useSessionQuery";
 import { postAuthStart } from "@/api/authAPIs";
 import { redirectTo } from "@/utils/redirect";
-import { L } from "@/locales";
 import {
   BRAND_WORDMARK,
   BTN_TEXT,
   PATH_LIST,
 } from "@/constants/commonConstants";
+import { L } from "@/locales";
 
 /**
  * LoginPage is the console sign-in screen (SC-01). Login is delegated to
