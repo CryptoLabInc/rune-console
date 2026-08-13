@@ -36,10 +36,11 @@ const styles = {
   timeCell: "text-muted-foreground font-mono text-xs",
 };
 
-/* Sort option set (SC-16 no.1) — values are the GET /invitations
-   sort query params (console API design §6). No status filter or
-   issuance button: issuance lives in user/team management. */
-const SORT_OPTIONS: TDropdownOption[] = [
+/* Sort option set (SC-16 no.1) — values are the GET /invitations sort query
+   params (console API design §6). Built per render (not at module scope): the
+   labels read L.* / getters, which a module-level array would freeze at the
+   load-time language, so the sort dropdown wouldn't follow a live switch. */
+const buildSortOptions = (): TDropdownOption[] => [
   { value: "username", label: TABLE_HEADERS.memberName },
   { value: "issued_at", label: L.members.lastIssued },
   { value: "last_access", label: TABLE_HEADERS.lastAccess },
@@ -54,6 +55,7 @@ const SORT_OPTIONS: TDropdownOption[] = [
  * (GET /invitations?view=history&sort&page&size).
  */
 const SessionsPage = () => {
+  const sortOptions = buildSortOptions();
   const [sort, setSort] = useState("last_access");
   const { page, totalPages, setPage, resetPage, syncTotal } =
     useServerPagination();
@@ -108,7 +110,7 @@ const SessionsPage = () => {
           <div className="flex items-center gap-2 px-4 py-4">
             <span className="text-md text-faint">{L.common.sortBy}</span>
             <Dropdown
-              options={SORT_OPTIONS}
+              options={sortOptions}
               value={sort}
               onChange={changeSort}
               size="sm"
