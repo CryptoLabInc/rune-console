@@ -1,3 +1,4 @@
+import { L } from "@/locales";
 import { useState } from "react";
 
 import {
@@ -10,7 +11,6 @@ import { useNoticeStore } from "@/state/store/noticeStore";
 import { buildTeamOptions } from "@/utils/buildTeamOptions";
 import { getTeamDescendantIds } from "@/utils/teamHierarchy";
 import { ERROR_CODES } from "@/constants/apiConstants";
-import { BATCH_REASON_FALLBACK } from "@/constants/errorConstants";
 import { NOTICE_TEXT } from "@/constants/noticeConstants";
 import type { TBatchResult, TTeamTree } from "@/types/teamTypes";
 import type { TUserListItem } from "@/types/userTypes";
@@ -170,7 +170,7 @@ export const useMembershipDrafts = ({
         toBatchFailureRows(
           result.failed,
           teamNameOf,
-          () => BATCH_REASON_FALLBACK,
+          () => L.common.processFailed,
         ),
       );
     }
@@ -207,7 +207,7 @@ export const useMembershipDrafts = ({
         toBatchFailureRows(
           result.failed,
           teamNameOf,
-          () => BATCH_REASON_FALLBACK,
+          () => L.common.processFailed,
         ),
       );
     }

@@ -1,3 +1,4 @@
+import { L } from "@/locales";
 import { useState } from "react";
 
 import Button from "@/components/elements/Button";
@@ -11,11 +12,9 @@ import {
   MODAL_TITLES,
   PLACEHOLDERS,
 } from "@/constants/commonConstants";
-import { TEAM_NAME_DUPLICATE_TEXT } from "@/constants/errorConstants";
 import { MODAL_STYLE_VAR } from "@/constants/styleConstants";
 import {
   TEAM_NAME_PATTERN,
-  TEAM_NAME_RULE_TEXT,
 } from "@/constants/teamConstants";
 import type { TTeamTree } from "@/types/teamTypes";
 
@@ -55,9 +54,9 @@ const CreateTeamModal = ({
   const canSubmit = trimmed.length > 0 && !isInvalidFormat && !isDuplicate;
 
   const nameError = isInvalidFormat
-    ? TEAM_NAME_RULE_TEXT
+    ? L.teams.teamNameRule
     : trimmed && isDuplicate
-      ? TEAM_NAME_DUPLICATE_TEXT
+      ? L.teams.dupName
       : undefined;
 
   return (
@@ -70,7 +69,7 @@ const CreateTeamModal = ({
           maxLength={50}
           value={name}
           setValue={setName}
-          hint={TEAM_NAME_RULE_TEXT}
+          hint={L.teams.teamNameRule}
           error={nameError}
         />
         <Dropdown
