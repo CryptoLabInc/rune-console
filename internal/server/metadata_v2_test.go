@@ -86,9 +86,9 @@ func TestMetadataV2InsertBoundary(t *testing.T) {
 				meta := testMetadataV2(t, v, token, "record")
 				switch tc.name {
 				case "legacy":
-					meta, _ = NewConsoleGRPC(v).sealMeta(token, `{"text":"old"}`)
+					meta, _ = NewConsoleGRPC(v).sealMeta(token, `{"timestamp":"2026-10-28T12:00:00Z","author":"writer@example.com","insight":"A legacy insight","context":"Captured by released rune-mcp"}`)
 				case "plaintext":
-					meta = `{"text":"old"}`
+					meta = `{"timestamp":"2026-10-28T12:00:00Z","author":"writer@example.com","insight":"A legacy insight","context":"Captured by released rune-mcp"}`
 				case "wrong_record":
 					meta = testMetadataV2(t, v, token, "other")
 				case "wrong_agent":
@@ -121,7 +121,7 @@ func TestMetadataV2InsertBoundary(t *testing.T) {
 
 func TestMetadataV2SearchIntegrity(t *testing.T) {
 	for _, migration := range []bool{false, true} {
-		for _, kind := range []string{"valid", "corrupt", "wrong_record", "unknown", "stripped", "legacy", "plaintext", "empty"} {
+		for _, kind := range []string{"valid", "corrupt", "wrong_record", "unknown", "stripped", "legacy", "plaintext", "arbitrary_json", "empty"} {
 			t.Run(kind+map[bool]string{false: "/strict", true: "/migration"}[migration], func(t *testing.T) {
 				v, f, token := metadataWriter(t)
 				if migration {
@@ -138,9 +138,11 @@ func TestMetadataV2SearchIntegrity(t *testing.T) {
 				case "stripped":
 					meta = strings.Replace(meta, `,"v":2`, "", 1)
 				case "legacy":
-					meta, _ = NewConsoleGRPC(v).sealMeta(token, `{"text":"old"}`)
+					meta, _ = NewConsoleGRPC(v).sealMeta(token, `{"timestamp":"2026-10-28T12:00:00Z","author":"writer@example.com","insight":"A legacy insight","context":"Captured by released rune-mcp"}`)
 				case "plaintext":
-					meta = `{"text":"old"}`
+					meta = `{"timestamp":"2026-10-28T12:00:00Z","author":"writer@example.com","insight":"A legacy insight","context":"Captured by released rune-mcp"}`
+				case "arbitrary_json":
+					meta = `{"text":"not a domain.Record"}`
 				case "empty":
 					meta = ""
 				}

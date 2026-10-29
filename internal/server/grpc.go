@@ -1015,7 +1015,8 @@ func (s *ConsoleGRPC) openMeta(stored, recordID string) (string, error) {
 	return stored, nil
 }
 
-// Legacy records are JSON objects with a text string, never arbitrary JSON.
+// Legacy records match rune-mcp domain.Record: timestamp and insight, with
+// optional author/context. Arbitrary JSON is not treated as a record.
 // This shape check is not authentication; migration reads remain malleable.
 func legacyMetadataRecord(raw []byte) bool {
 	var record map[string]json.RawMessage
@@ -1027,9 +1028,13 @@ func legacyMetadataRecord(raw []byte) bool {
 			return false
 		}
 	}
-	var text string
-	value, ok := record["text"]
-	return ok && json.Unmarshal(value, &text) == nil && string(value) != "null"
+	var legacy struct {
+		Timestamp time.Time `json:"timestamp"`
+		Insight   *string   `json:"insight"`
+		Author    string    `json:"author"`
+		Context   string    `json:"context"`
+	}
+	return json.Unmarshal(raw, &legacy) == nil && !legacy.Timestamp.IsZero() && legacy.Insight != nil
 }
 
 // ── LookupWrap / Unwrap (invite redemption — pre-auth) ────────────
