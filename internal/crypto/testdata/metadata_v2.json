@@ -1,0 +1,12 @@
+{
+  "notice": "NON-SECRET fixed interoperability test vector; never use these keys/nonces in production",
+  "base_key_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "derived_key_hex": "98f81223d6dcf856c6341651296d390f91659f41d5b506085ff59c23b60bd3d8",
+  "nonce_hex": "a0a1a2a3a4a5a6a7a8a9aaab",
+  "aad_hex": "5b2272756e652d6d65746164617461222c2232222c223031323334353637383961626364656630313233343536373839616263646566222c2231323365343536372d653839622d343264332d613435362d343236363134313734303030225d",
+  "plaintext": "{\"title\":\"public fixture\",\"description\":\"메타데이터 🔒\",\"count\":2}",
+  "ciphertext_tag_hex": "a8d7f13c4e81f7651a883e532180391e58461ac1b943567f5494e52908bec5d6e2f2cd8c07a0713fc0d18b176e46e1f1cc7d80a4fa8546b5deb4adf98c94fa6f526093e91b9e38a4179cda6f810ca493fd61a40bcacd9df491",
+  "agent_id": "0123456789abcdef0123456789abcdef",
+  "record_id": "123e4567-e89b-42d3-a456-426614174000",
+  "envelope_json": "{\"v\":2,\"a\":\"0123456789abcdef0123456789abcdef\",\"r\":\"123e4567-e89b-42d3-a456-426614174000\",\"c\":\"oKGio6SlpqeoqaqrqNfxPE6B92UaiD5TIYA5HlhGGsG5Q1Z/VJTlKQi+xdbi8s2MB6BxP8DRixduRuHxzH2ApPqFRrXetK35jJT6b1Jgk+kbnjikF5zab4EMpJP9YaQLys2d9JE=\"}"
+}

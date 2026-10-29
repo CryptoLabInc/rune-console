@@ -90,7 +90,7 @@ func TestMemberStatusGateOnDataplane(t *testing.T) {
 	if !fake.called {
 		t.Error("engine.Search did not run for the active member")
 	}
-	if _, err := srv.Insert(ctx, &pb.InsertRequest{Token: tokAct.Token, RmpItem: []byte{0x01}, MmItem: []byte{0x01}}); err != nil {
+	if _, err := srv.Insert(ctx, &pb.InsertRequest{Token: tokAct.Token, Id: "record", Metadata: testMetadataV2(t, v, tokAct.Token, "record"), RmpItem: []byte{0x01}, MmItem: []byte{0x01}}); err != nil {
 		t.Errorf("active member Insert = %v, want nil", err)
 	}
 

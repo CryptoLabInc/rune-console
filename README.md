@@ -115,6 +115,15 @@ The checked-in example is [`internal/server/testdata/runeconsole.conf.example`](
 
 TLS is mandatory for the agent-facing gRPC endpoint. The local management surface binds only to `127.0.0.1`.
 
+## Security and upgrade notes
+
+Stored item vectors are encrypted; recall query vectors are plaintext to Console
+and RuneSpace. Console holds HE secret keys and payload keys and can open
+authorized content. Read the [security boundary and coordinated upgrade guide](docs/security-upgrade.md)
+for pending authenticated-metadata v2 changes, legacy read policy, and the
+maintenance window required when upgrading Console before MCP clients. Existing
+installer downloads are not evidence that these pending changes are released.
+
 ## Development
 
 The backend requires Go 1.26.4 or newer. The frontend requires Node.js 20+ and pnpm 10.
