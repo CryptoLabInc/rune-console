@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -132,11 +133,20 @@ func TestDecryptMetadataV2RejectsInvalidInput(t *testing.T) {
 		add("missing_"+field, remove(field))
 		add("null_"+field, change(field, nil))
 		add("object_"+field, change(field, map[string]any{}))
+		add("uppercase_"+field, strings.Replace(f.EnvelopeJSON, `"`+field+`":`, `"`+strings.ToUpper(field)+`":`, 1))
+		var fields map[string]json.RawMessage
+		if err := json.Unmarshal([]byte(f.EnvelopeJSON), &fields); err != nil {
+			t.Fatal(err)
+		}
+		for _, value := range []struct{ name, raw string }{{"same", string(fields[field])}, {"null", "null"}} {
+			add("duplicate_"+field+"_"+value.name, strings.TrimSuffix(f.EnvelopeJSON, "}")+`,"`+field+`":`+value.raw+`}`)
+		}
 	}
 	for _, value := range []any{0, 1, 3, -2, 2.1, "2", true} {
 		b, _ := json.Marshal(value)
 		add("invalid_version_"+string(b), change("v", value))
 	}
+	add("extra_field", strings.TrimSuffix(f.EnvelopeJSON, "}")+`,"extra":true}`)
 	add("numeric_agent", change("a", 123))
 	add("numeric_record", change("r", 123))
 	add("numeric_ciphertext", change("c", 123))

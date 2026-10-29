@@ -111,6 +111,12 @@ func TestMetadataV2InsertBoundary(t *testing.T) {
 				if f.insertCalled != (tc.code == codes.OK) {
 					t.Fatalf("forwarded=%v", f.insertCalled)
 				}
+				if tc.code == codes.OK {
+					opened, err := NewConsoleGRPC(v).openMeta(meta, "record")
+					if err != nil || opened != `{"text":"shared memory"}` {
+						t.Fatalf("accepted metadata must open with the same outer ID: %q %v", opened, err)
+					}
+				}
 				if tc.code == codes.FailedPrecondition && !strings.Contains(err.Error(), "upgrade") {
 					t.Fatal("missing upgrade guidance")
 				}
@@ -216,6 +222,45 @@ func TestMetadataV2ConfigLoad(t *testing.T) {
 		}
 		if cfg.AllowLegacyMetadataRead != enabled {
 			t.Fatalf("migration=%v want %v", cfg.AllowLegacyMetadataRead, enabled)
+		}
+	}
+}
+
+// A producer must not store envelopes whose security fields have ambiguous
+// spellings or values. Both insert and read must reject them in either policy.
+func TestMetadataV2RejectsNoncanonicalAtBoundary(t *testing.T) {
+	for _, migration := range []bool{false, true} {
+		v, f, token := metadataWriter(t)
+		v.cfg.AllowLegacyMetadataRead = migration
+		valid := testMetadataV2(t, v, token, "record")
+		var fields map[string]json.RawMessage
+		if err := json.Unmarshal([]byte(valid), &fields); err != nil {
+			t.Fatal(err)
+		}
+		cases := map[string]string{
+			"uppercase_all": strings.NewReplacer(`"v":`, `"V":`, `"a":`, `"A":`, `"r":`, `"R":`, `"c":`, `"C":`).Replace(valid),
+			"extra_field":   strings.TrimSuffix(valid, "}") + `,"extra":true}`,
+		}
+		for _, field := range []string{"v", "a", "r", "c"} {
+			cases["uppercase_"+field] = strings.Replace(valid, `"`+field+`":`, `"`+strings.ToUpper(field)+`":`, 1)
+			for _, value := range []struct{ name, raw string }{{"same", string(fields[field])}, {"null", "null"}} {
+				cases["duplicate_"+field+"_"+value.name] = strings.TrimSuffix(valid, "}") + `,"` + field + `":` + value.raw + `}`
+			}
+			for _, value := range []struct{ name, raw string }{{"null", "null"}, {"object", "{}"}} {
+				cases[value.name+"_"+field] = strings.Replace(valid, string(fields[field]), value.raw, 1)
+			}
+		}
+		for name, meta := range cases {
+			t.Run(name+map[bool]string{false: "/strict", true: "/migration"}[migration], func(t *testing.T) {
+				f.insertCalled = false
+				_, err := NewConsoleGRPC(v).Insert(context.Background(), &pb.InsertRequest{Token: token, Id: "record", Metadata: meta})
+				if status.Code(err) != codes.InvalidArgument || f.insertCalled {
+					t.Errorf("noncanonical insert: code=%v forwarded=%v", status.Code(err), f.insertCalled)
+				}
+				if opened, err := NewConsoleGRPC(v).openMeta(meta, "record"); err == nil || opened != "" {
+					t.Errorf("noncanonical read returned %q, error=%v", opened, err)
+				}
+			})
 		}
 	}
 }

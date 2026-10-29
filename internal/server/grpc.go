@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -615,12 +616,10 @@ func (s *ConsoleGRPC) Insert(ctx context.Context, req *pb.InsertRequest) (*pb.In
 		statusStr, errDetail = "error", &msg
 		return &pb.InsertResponse{Error: msg}, status.Error(codes.InvalidArgument, msg)
 	}
-	if _, versioned := fields["v"]; !versioned {
-		if _, stripped := fields["r"]; !stripped {
-			msg := "metadata upgrade required: upgrade rune-mcp to support metadata_envelope_v2"
-			statusStr, errDetail = "error", &msg
-			return &pb.InsertResponse{Error: msg}, status.Error(codes.FailedPrecondition, msg)
-		}
+	if !hasMetadataV2Marker(fields) {
+		msg := "metadata upgrade required: upgrade rune-mcp to support metadata_envelope_v2"
+		statusStr, errDetail = "error", &msg
+		return &pb.InsertResponse{Error: msg}, status.Error(codes.FailedPrecondition, msg)
 	}
 	agentID := crypto.AgentIDFromToken(req.GetToken())
 	dek, keyErr := crypto.DeriveAgentKey(s.v.cfg.Tokens.TeamSecret, agentID)
@@ -959,6 +958,17 @@ func (s *ConsoleGRPC) sealMeta(token, meta string) (string, error) {
 	return string(b), nil
 }
 
+// Case variants and stripped v2 envelopes must reach strict v2 validation,
+// never the legacy migration path.
+func hasMetadataV2Marker(fields map[string]json.RawMessage) bool {
+	for name := range fields {
+		if strings.EqualFold(name, "v") || strings.EqualFold(name, "r") {
+			return true
+		}
+	}
+	return false
+}
+
 // openMeta authenticates v2 against the outer record ID. The envelope agent
 // selects a key for shared reads; GCM authenticates that selection and both IDs.
 func (s *ConsoleGRPC) openMeta(stored, recordID string) (string, error) {
@@ -967,9 +977,9 @@ func (s *ConsoleGRPC) openMeta(stored, recordID string) (string, error) {
 	if err := json.Unmarshal([]byte(stored), &fields); err != nil || fields == nil {
 		return "", fail
 	}
-	if _, versioned := fields["v"]; versioned {
-		var env envelope
-		if json.Unmarshal([]byte(stored), &env) != nil {
+	if hasMetadataV2Marker(fields) {
+		env, err := crypto.ParseMetadataV2(stored)
+		if err != nil {
 			return "", fail
 		}
 		dek, err := crypto.DeriveAgentKey(s.v.cfg.Tokens.TeamSecret, env.AgentID)
@@ -981,10 +991,6 @@ func (s *ConsoleGRPC) openMeta(stored, recordID string) (string, error) {
 			return "", fail
 		}
 		return string(pt), nil
-	}
-	// A stripped v2 envelope must never enter legacy decryption.
-	if _, stripped := fields["r"]; stripped {
-		return "", fail
 	}
 	if !s.v.cfg.AllowLegacyMetadataRead {
 		return "", fail
