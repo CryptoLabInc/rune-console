@@ -155,3 +155,20 @@ Rune Console is licensed under the [Apache License 2.0](LICENSE).
 <p align="center">
   Part of <a href="https://rune.team">RUNE</a> · Built by <a href="https://www.cryptolab.co.kr/">CryptoLab</a>
 </p>
+
+### Authenticated metadata migration
+
+Console advertises `capabilities: ["metadata_envelope_v2"]` in the agent manifest.
+Install the Console reader and insert validator first, then upgrade rune-mcp to
+write authenticated metadata v2. Old clients cannot capture during this interval:
+Console rejects old writes with an upgrade-required error, even during migration.
+
+`allow_legacy_metadata_read: false` is the default. Temporarily setting it to
+`true` permits reading recognized legacy AES-CTR envelopes and plaintext JSON
+records. This option is read-only compatibility: legacy inputs are unauthenticated
+and malleable, so accepting them weakens downgrade resistance. It never permits
+fallback after a v2 failure, an unknown version, or a stripped v2 record carrying
+its record-ID field. Disable it after migrating legacy data. A metadata integrity
+failure aborts the entire search with a generic error and returns no partial hits.
+Console can decrypt metadata to authenticate inserts and serve search results;
+FHE embeddings remain encrypted throughout this metadata validation.

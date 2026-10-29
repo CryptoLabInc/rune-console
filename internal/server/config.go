@@ -40,6 +40,8 @@ const expectedSecretMode fs.FileMode = 0o640
 type Config struct {
 	ConfigVersion int `yaml:"config_version"`
 
+	AllowLegacyMetadataRead bool `yaml:"allow_legacy_metadata_read"`
+
 	Server  ServerConfig  `yaml:"server"`
 	Cloud   CloudConfig   `yaml:"cloud"`
 	Keys    KeysConfig    `yaml:"keys"`

@@ -10,6 +10,10 @@
 
 config_version: 1
 
+# Temporary read-only migration support for unauthenticated CTR/plaintext records.
+# This weakens downgrade resistance; new writes always require metadata v2.
+allow_legacy_metadata_read: false
+
 server:
   grpc:
     host: 0.0.0.0

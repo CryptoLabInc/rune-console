@@ -5,12 +5,9 @@
 //
 //	base64( IV (16 bytes) || ciphertext (variable) )
 //
-// AES-256-CTR is unauthenticated; integrity is enforced by upstream JSON
-// envelopes and HKDF-derived per-agent keys.
-//
-// TODO: migrate to AES-256-GCM (AEAD) — keys are issued directly between
-// rune and rune-console so there is no external wire-format compatibility
-// constraint. Requires coordinated update of the rune-side encryption path.
+// AES-256-CTR is unauthenticated. Neither JSON envelopes nor HKDF-derived
+// keys provide ciphertext integrity. These helpers support explicit legacy
+// migration reads; new writes require authenticated metadata v2.
 package crypto
 
 import (
