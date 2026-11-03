@@ -125,7 +125,7 @@ func TestDataplaneResolvesEmailToMemberUUID(t *testing.T) {
 		t.Fatalf("recall scope = %v, want [%s] (membership keyed by member UUID must be reached via the token email)",
 			fake.gotScope, g.ID)
 	}
-	if _, err := srv.Insert(ctx, &pb.InsertRequest{Token: tok.Token, RmpItem: []byte{0x01}, MmItem: []byte{0x01}}); err != nil {
+	if _, err := srv.Insert(ctx, &pb.InsertRequest{Token: tok.Token, Id: "record", Metadata: testMetadataV2(t, v, tok.Token, "record"), RmpItem: []byte{0x01}, MmItem: []byte{0x01}}); err != nil {
 		t.Fatalf("Insert = %v, want nil (write grant exists under the member UUID)", err)
 	}
 }

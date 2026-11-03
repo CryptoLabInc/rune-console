@@ -51,17 +51,20 @@ type ConsoleServiceClient interface {
 	GetCACert(ctx context.Context, in *GetCACertRequest, opts ...grpc.CallOption) (*GetCACertResponse, error)
 	// Capture write (pre-encrypted): rune-mcp sends the FHE-encrypted RMP+MM
 	// blobs, the IVF cluster assignment, and the sealed metadata; the console
-	// forwards them verbatim to runespace (SDK InsertPreEncrypted) — it holds no
-	// key for this path and performs no encryption.
+	// authenticates metadata against the token agent and request ID, validates
+	// the decrypted Record, and forwards ciphertext verbatim to runespace.
+	// Invalid metadata is InvalidArgument; clients lacking v2 must upgrade.
 	Insert(ctx context.Context, in *InsertRequest, opts ...grpc.CallOption) (*InsertResponse, error)
 	// Streams the runespace IVF centroid set (header + id-ordered batches) so
 	// rune-mcp can assign each vector's cluster locally before encrypting. The
 	// cheap version pointer is in GetAgentManifest; fetch this only on mismatch.
 	GetCentroids(ctx context.Context, in *GetCentroidsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[CentroidChunk], error)
-	// Blind vector search over runespace (recall + capture-time novelty check).
+	// Blind vector search over runespace (recall).
 	// The plaintext query is sent to runespace (PCMM); the console decrypts the
 	// score blobs (SecKey), ranks, resolves and opens metadata (agent_dek), and
-	// returns ranked plaintext hits.
+	// returns ranked plaintext hits. Missing metadata on unregistered IDs and
+	// policy-excluded legacy hits are omitted. Invalid v2 metadata or missing
+	// v2 metadata on a registered v2 ID fails the whole search with DataLoss.
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
 	// Returns the caller's own memberships and the depth-annotated group tree
 	// they can reach by effective role (recall scope) — requirements 4 and 12.
@@ -214,17 +217,20 @@ type ConsoleServiceServer interface {
 	GetCACert(context.Context, *GetCACertRequest) (*GetCACertResponse, error)
 	// Capture write (pre-encrypted): rune-mcp sends the FHE-encrypted RMP+MM
 	// blobs, the IVF cluster assignment, and the sealed metadata; the console
-	// forwards them verbatim to runespace (SDK InsertPreEncrypted) — it holds no
-	// key for this path and performs no encryption.
+	// authenticates metadata against the token agent and request ID, validates
+	// the decrypted Record, and forwards ciphertext verbatim to runespace.
+	// Invalid metadata is InvalidArgument; clients lacking v2 must upgrade.
 	Insert(context.Context, *InsertRequest) (*InsertResponse, error)
 	// Streams the runespace IVF centroid set (header + id-ordered batches) so
 	// rune-mcp can assign each vector's cluster locally before encrypting. The
 	// cheap version pointer is in GetAgentManifest; fetch this only on mismatch.
 	GetCentroids(*GetCentroidsRequest, grpc.ServerStreamingServer[CentroidChunk]) error
-	// Blind vector search over runespace (recall + capture-time novelty check).
+	// Blind vector search over runespace (recall).
 	// The plaintext query is sent to runespace (PCMM); the console decrypts the
 	// score blobs (SecKey), ranks, resolves and opens metadata (agent_dek), and
-	// returns ranked plaintext hits.
+	// returns ranked plaintext hits. Missing metadata on unregistered IDs and
+	// policy-excluded legacy hits are omitted. Invalid v2 metadata or missing
+	// v2 metadata on a registered v2 ID fails the whole search with DataLoss.
 	Search(context.Context, *SearchRequest) (*SearchResponse, error)
 	// Returns the caller's own memberships and the depth-annotated group tree
 	// they can reach by effective role (recall scope) — requirements 4 and 12.

@@ -40,6 +40,8 @@ const expectedSecretMode fs.FileMode = 0o640
 type Config struct {
 	ConfigVersion int `yaml:"config_version"`
 
+	AllowLegacyMetadataRead bool `yaml:"allow_legacy_metadata_read"`
+
 	Server  ServerConfig  `yaml:"server"`
 	Cloud   CloudConfig   `yaml:"cloud"`
 	Keys    KeysConfig    `yaml:"keys"`
@@ -246,6 +248,25 @@ func (c *Config) Redact() Config {
 		out.Tokens.TeamSecret = "[REDACTED]"
 	}
 	return out
+}
+
+// TeamSecretWarning detects obvious mistakes without rejecting existing
+// installations or restricting strong secrets to one encoding. Absence of a
+// warning is not an entropy assessment. The returned text never includes the key.
+func (c *Config) TeamSecretWarning() string {
+	secret := strings.TrimSpace(c.Tokens.TeamSecret)
+	var issue string
+	switch {
+	case secret == "":
+		issue = "blank"
+	case strings.HasPrefix(strings.ToLower(secret), "replace_with_"):
+		issue = "a placeholder"
+	case len(secret) < 32:
+		issue = "shorter than 32 bytes"
+	default:
+		return ""
+	}
+	return "console: weak team_secret (" + issue + "); use a high-entropy random secret for new deployments; changing an existing team secret without migration makes stored memories unreadable"
 }
 
 // Validate enforces invariants the daemon needs at startup.

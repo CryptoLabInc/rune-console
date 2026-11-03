@@ -133,3 +133,13 @@ func TestInterceptorAllowsNonConsoleMethod(t *testing.T) {
 		t.Errorf("non-console method blocked: %v", err)
 	}
 }
+
+func TestInterceptorLimitsMetadataByBytes(t *testing.T) {
+	// Fewer than 2 Mi code points, but more than 2 MiB of UTF-8.
+	req := &pb.InsertRequest{Token: "evt_0123456789abcdef0123456789abcdef", Id: "record", RmpItem: []byte{1}, MmItem: []byte{1}, CentroidSetVersion: "v1", Metadata: strings.Repeat("기", 700000)}
+	called := false
+	_, err := mustInterceptor(t)(context.Background(), req, consoleMethodInfo("Insert"), func(context.Context, any) (any, error) { called = true; return nil, nil })
+	if status.Code(err) != codes.InvalidArgument || called {
+		t.Fatalf("oversized metadata reached handler: %v called=%v", err, called)
+	}
+}

@@ -21,6 +21,7 @@
 # Non-interactive env vars (local install):
 #   RUNECONSOLE_CLOUD_API_BASE_URL     cloud.api_base_url (default: https://api.rune.team)
 #   RUNECONSOLE_CLOUD_WEB_BASE_URL     cloud.web_base_url (default: https://rune.team)
+#   RUNECONSOLE_TEAM_SECRET           Restore an existing team's secret (default: generated)
 #
 # The runespace data-plane endpoint is NOT set at install time — it is
 # connected from the console after login (provision -> access token -> dial).
@@ -1208,6 +1209,15 @@ collect_and_write_config() {
     if [[ -z "$team_secret" ]]; then
       team_secret=$(LC_ALL=C tr -dc 'a-f0-9' < /dev/urandom | head -c 64; true)
     fi
+    # YAML single-quoted scalars preserve punctuation and backslashes, but fold
+    # physical line breaks. Reject those before opening an existing config.
+    case "$team_secret" in
+      *$'\n'*|*$'\r'*|*$'\302\205'*|*$'\342\200\250'*|*$'\342\200\251'*)
+        die "RUNECONSOLE_TEAM_SECRET must be a single line; configuration was not overwritten."
+        ;;
+    esac
+    local team_secret_yaml doubled_quote="''"
+    team_secret_yaml="'${team_secret//\'/$doubled_quote}'"
 
     # Cloud control-plane origin. Defaults to the rune.team production plane;
     # override both for a temporary install against another plane (e.g. dev).
@@ -1242,7 +1252,7 @@ collect_and_write_config() {
       "  embedding_dim: 1024" \
       "" \
       "tokens:" \
-      "  team_secret: ${team_secret}" \
+      "  team_secret: ${team_secret_yaml}" \
       "" \
       "audit:" \
       "  mode: file+stdout" \

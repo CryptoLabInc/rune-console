@@ -2,11 +2,14 @@ package server
 
 import (
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -94,6 +97,10 @@ type Console struct {
 	// The daemon wires both via SetInviteRedemption.
 	inviteRedeem inviteRedemption
 	memberAct    memberActivator
+
+	metadataDB           *sql.DB
+	legacyMetadataReads  atomic.Uint64
+	excludedMetadataHits atomic.Uint64
 
 	bundleParams crypto.KeysParams
 }
@@ -399,7 +406,7 @@ type ConsoleGRPC struct {
 
 func NewConsoleGRPC(v *Console) *ConsoleGRPC { return &ConsoleGRPC{v: v} }
 
-// envelope is the sealed-metadata shape stored verbatim in runespace:
+// envelope is the legacy CTR shape, retained only for explicit compatibility reads:
 // {"a": "<agent_id>", "c": "<base64 AES-CTR ciphertext>"}. The agent_id lets
 // any console request derive the right per-agent DEK, so team memory captured by
 // one agent can be recalled (and metadata-decrypted) by another.
@@ -408,7 +415,7 @@ type envelope struct {
 	Cipher  string `json:"c"`
 }
 
-// ── GetAgentManifest (config only — no keys ever leave the console) ──
+// ── GetAgentManifest (public FHE keys + per-agent metadata key) ──
 
 func (s *ConsoleGRPC) GetAgentManifest(ctx context.Context, req *pb.GetAgentManifestRequest) (*pb.GetAgentManifestResponse, error) {
 	start := time.Now()
@@ -510,12 +517,13 @@ func (v *Console) buildBundle(ctx context.Context, token string) (map[string]any
 		return nil, err
 	}
 	bundle := map[string]any{
-		"key_id":      v.bundleParams.KeyID,
-		"agent_id":    agentID,
-		"dim":         v.cfg.Keys.EmbeddingDim,
-		"rmp_enc_key": rmpEnc, // RMP (flat) EncKey envelope, verbatim JSON
-		"mm_enc_key":  mmEnc,  // MM (clustered) EncKey envelope, verbatim JSON
-		"agent_dek":   base64.StdEncoding.EncodeToString(dek),
+		"capabilities": []string{"metadata_envelope_v2"},
+		"key_id":       v.bundleParams.KeyID,
+		"agent_id":     agentID,
+		"dim":          v.cfg.Keys.EmbeddingDim,
+		"rmp_enc_key":  rmpEnc, // RMP (flat) EncKey envelope, verbatim JSON
+		"mm_enc_key":   mmEnc,  // MM (clustered) EncKey envelope, verbatim JSON
+		"agent_dek":    base64.StdEncoding.EncodeToString(dek),
 	}
 	// Cheap centroid-set version pointer: rune-mcp skips the heavy GetCentroids
 	// fetch when its cache already matches. Best-effort — empty ("none loaded
@@ -602,6 +610,46 @@ func (s *ConsoleGRPC) Insert(ctx context.Context, req *pb.InsertRequest) (*pb.In
 		return &pb.InsertResponse{Error: err.Error()}, status.Error(st, err.Error())
 	}
 
+	// Authenticate metadata only after identity and write permissions have passed.
+	if req.GetMetadata() == "" {
+		msg := "metadata upgrade required: upgrade rune-mcp to support metadata_envelope_v2"
+		statusStr, errDetail = "error", &msg
+		return &pb.InsertResponse{Error: msg}, status.Error(codes.FailedPrecondition, msg)
+	}
+	if len(req.GetMetadata()) > maxMetadataEnvelopeBytes {
+		msg := "metadata envelope exceeds size limit"
+		statusStr, errDetail = "error", &msg
+		return &pb.InsertResponse{Error: msg}, status.Error(codes.InvalidArgument, msg)
+	}
+	fields, parseErr := crypto.ParseMetadataFields(req.GetMetadata())
+	if parseErr != nil {
+		msg := "invalid metadata envelope"
+		statusStr, errDetail = "error", &msg
+		return &pb.InsertResponse{Error: msg}, status.Error(codes.InvalidArgument, msg)
+	}
+	if !hasMetadataV2Marker(fields) {
+		msg := "metadata upgrade required: upgrade rune-mcp to support metadata_envelope_v2"
+		statusStr, errDetail = "error", &msg
+		return &pb.InsertResponse{Error: msg}, status.Error(codes.FailedPrecondition, msg)
+	}
+	agentID := crypto.AgentIDFromToken(req.GetToken())
+	dek, keyErr := crypto.DeriveAgentKey(s.v.cfg.Tokens.TeamSecret, agentID)
+	if keyErr != nil {
+		msg := "metadata key unavailable"
+		statusStr, errDetail = "error", &msg
+		return &pb.InsertResponse{Error: msg}, status.Error(codes.FailedPrecondition, msg)
+	}
+	env, err := crypto.MetadataV2FromFields(fields)
+	var pt []byte
+	if err == nil {
+		pt, err = crypto.DecryptMetadataV2Envelope(env, dek, agentID, req.GetId())
+	}
+	if err != nil || !validMetadataRecord(pt, time.Now()) {
+		msg := "invalid authenticated metadata"
+		statusStr, errDetail = "error", &msg
+		return &pb.InsertResponse{Error: msg}, status.Error(codes.InvalidArgument, msg)
+	}
+
 	eng, ok := s.v.getEngine()
 	if !ok {
 		statusStr = "error"
@@ -610,9 +658,16 @@ func (s *ConsoleGRPC) Insert(ctx context.Context, req *pb.InsertRequest) (*pb.In
 		return &pb.InsertResponse{Error: msg}, status.Error(codes.FailedPrecondition, msg)
 	}
 
+	if err := s.v.reserveMetadataV2(ctx, req.GetId()); err != nil {
+		msg := "metadata registry unavailable"
+		statusStr, errDetail = "error", &msg
+		return &pb.InsertResponse{Error: msg}, status.Error(codes.FailedPrecondition, msg)
+	}
+
 	// The item is already FHE-encrypted and the metadata already sealed by
 	// rune-mcp (which holds the PUBLIC EncKey + agent_dek); the console forwards
-	// the ciphertext to runespace verbatim and never sees the plaintext.
+	// authenticated ciphertext to runespace verbatim after verifying metadata.
+	// Console can decrypt metadata; the FHE embedding stays encrypted.
 	if err := eng.InsertPreEncrypted(ctx, crypto.PreEncryptedItem{
 		ID:                 req.GetId(),
 		RMPBlob:            req.GetRmpItem(),
@@ -621,6 +676,11 @@ func (s *ConsoleGRPC) Insert(ctx context.Context, req *pb.InsertRequest) (*pb.In
 		CentroidSetVersion: req.GetCentroidSetVersion(),
 		SealedMetadata:     req.GetMetadata(),
 	}, tags...); err != nil {
+		if errors.Is(err, crypto.ErrCentroidVersionMismatch) {
+			msg := "WRONG_CENTROID_VERSION: refetch centroids and rebuild the same capture"
+			statusStr, errDetail = "error", &msg
+			return &pb.InsertResponse{Error: msg}, status.Error(codes.FailedPrecondition, msg)
+		}
 		statusStr = "error"
 		msg := err.Error()
 		errDetail = &msg
@@ -709,7 +769,7 @@ func (s *ConsoleGRPC) GetCentroids(req *pb.GetCentroidsRequest, stream pb.Consol
 	return nil
 }
 
-// ── Search (recall + novelty) ─────────────────────────────────────
+// ── Search (recall) ─────────────────────────────────────
 
 func (s *ConsoleGRPC) Search(ctx context.Context, req *pb.SearchRequest) (*pb.SearchResponse, error) {
 	start := time.Now()
@@ -774,7 +834,22 @@ func (s *ConsoleGRPC) Search(ctx context.Context, req *pb.SearchRequest) (*pb.Se
 	}
 	out := make([]*pb.SearchHit, 0, len(hits))
 	for _, h := range hits {
-		out = append(out, &pb.SearchHit{Id: h.ID, Score: h.Score, Metadata: s.openMeta(h.Metadata)})
+		metadata, err := s.openMeta(h.Metadata, h.ID)
+		if err != nil {
+			var readErr *metadataReadError
+			if errors.As(err, &readErr) && readErr.excluded {
+				count := s.v.excludedMetadataHits.Add(1)
+				s.emitMetadataEvent(ctx, user, h.ID, "excluded", readErr.reason, count)
+				continue
+			}
+			statusStr = "error"
+			msg := "metadata integrity check failed"
+			detail := fmt.Sprintf("%s: record_id=%q reason=%s", msg, h.ID, err)
+			errDetail = &detail
+			s.emitMetadataEvent(ctx, user, h.ID, "error", err.Error(), s.v.excludedMetadataHits.Load())
+			return &pb.SearchResponse{Error: msg}, status.Error(codes.DataLoss, msg)
+		}
+		out = append(out, &pb.SearchHit{Id: h.ID, Score: h.Score, Metadata: metadata})
 	}
 	resultCount = len(out)
 	return &pb.SearchResponse{Hits: out}, nil
@@ -893,50 +968,15 @@ func mapGroupsError(err error) codes.Code {
 	}
 }
 
-// sealMeta AES-seals plaintext metadata under the caller's per-agent DEK and
-// wraps it in an {a,c} envelope for storage. Empty metadata seals to "".
-func (s *ConsoleGRPC) sealMeta(token, meta string) (string, error) {
-	if meta == "" {
-		return "", nil
+// Case variants and stripped v2 envelopes must reach strict v2 validation,
+// never the legacy migration path.
+func hasMetadataV2Marker(fields map[string]json.RawMessage) bool {
+	for name := range fields {
+		if strings.EqualFold(name, "v") || strings.EqualFold(name, "r") || strings.EqualFold(name, "g") {
+			return true
+		}
 	}
-	if s.v.cfg.Tokens.TeamSecret == "" {
-		return "", errors.New("team secret not configured")
-	}
-	agentID := crypto.AgentIDFromToken(token)
-	dek, err := crypto.DeriveAgentKey(s.v.cfg.Tokens.TeamSecret, agentID)
-	if err != nil {
-		return "", err
-	}
-	c, err := crypto.EncryptMetadata([]byte(meta), dek)
-	if err != nil {
-		return "", err
-	}
-	b, err := json.Marshal(envelope{AgentID: agentID, Cipher: c})
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
-}
-
-// openMeta best-effort opens a sealed {a,c} envelope to plaintext JSON. On any
-// failure it returns the stored string unchanged (plaintext/legacy tolerated).
-func (s *ConsoleGRPC) openMeta(stored string) string {
-	if stored == "" {
-		return ""
-	}
-	var env envelope
-	if err := json.Unmarshal([]byte(stored), &env); err != nil || env.Cipher == "" {
-		return stored
-	}
-	dek, err := crypto.DeriveAgentKey(s.v.cfg.Tokens.TeamSecret, env.AgentID)
-	if err != nil {
-		return stored
-	}
-	pt, err := crypto.DecryptMetadata(env.Cipher, dek)
-	if err != nil {
-		return stored
-	}
-	return string(pt)
+	return false
 }
 
 // ── LookupWrap / Unwrap (invite redemption — pre-auth) ────────────

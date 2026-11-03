@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -47,7 +48,11 @@ func newTestConsole(t *testing.T) *Console {
 	store := tokens.NewStore()
 	store.LoadDefaultsWithDemoToken()
 	audit, _ := NewAuditLogger(AuditConfig{Mode: ""})
-	return NewConsole(cfg, store, groups.NewStore(), nil, audit)
+	v := NewConsole(cfg, store, groups.NewStore(), nil, audit)
+	if err := v.SetMetadataRegistry(openTokensTestDB(t, filepath.Join(t.TempDir(), "metadata.db"))); err != nil {
+		t.Fatal(err)
+	}
+	return v
 }
 
 func TestGetAgentManifestInvalidToken(t *testing.T) {
