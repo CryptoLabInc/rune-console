@@ -8,5 +8,5 @@
   "ciphertext_tag_hex": "a8d7f13c4e81f7651a883e532180391e58461ac1b943567f5494e52908bec5d6e2f2cd8c07a0713fc0d18b176e46e1f1cc7d80a4fa8546b5deb4adf98c94fa6f526093e91b9e38a4179cda6f810ca493fd61a40bcacd9df491",
   "agent_id": "0123456789abcdef0123456789abcdef",
   "record_id": "123e4567-e89b-42d3-a456-426614174000",
-  "envelope_json": "{\"v\":2,\"a\":\"0123456789abcdef0123456789abcdef\",\"r\":\"123e4567-e89b-42d3-a456-426614174000\",\"c\":\"oKGio6SlpqeoqaqrqNfxPE6B92UaiD5TIYA5HlhGGsG5Q1Z/VJTlKQi+xdbi8s2MB6BxP8DRixduRuHxzH2ApPqFRrXetK35jJT6b1Jgk+kbnjikF5zab4EMpJP9YaQLys2d9JE=\"}"
+  "envelope_json": "{\"v\":2,\"a\":\"0123456789abcdef0123456789abcdef\",\"r\":\"123e4567-e89b-42d3-a456-426614174000\",\"g\":\"oKGio6SlpqeoqaqrqNfxPE6B92UaiD5TIYA5HlhGGsG5Q1Z/VJTlKQi+xdbi8s2MB6BxP8DRixduRuHxzH2ApPqFRrXetK35jJT6b1Jgk+kbnjikF5zab4EMpJP9YaQLys2d9JE=\"}"
 }

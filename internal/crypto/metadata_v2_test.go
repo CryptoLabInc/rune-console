@@ -58,7 +58,7 @@ func TestDecryptMetadataV2IndependentFixture(t *testing.T) {
 		t.Fatal("derived key does not match independent vector")
 	}
 	var envelope struct {
-		C string `json:"c"`
+		C string `json:"g"`
 	}
 	if err := json.Unmarshal([]byte(f.EnvelopeJSON), &envelope); err != nil {
 		t.Fatal(err)
@@ -129,7 +129,7 @@ func TestDecryptMetadataV2RejectsInvalidInput(t *testing.T) {
 	} {
 		add(bad.name, bad.input)
 	}
-	for _, field := range []string{"v", "a", "r", "c"} {
+	for _, field := range []string{"v", "a", "r", "g"} {
 		add("missing_"+field, remove(field))
 		add("null_"+field, change(field, nil))
 		add("object_"+field, change(field, map[string]any{}))
@@ -149,24 +149,34 @@ func TestDecryptMetadataV2RejectsInvalidInput(t *testing.T) {
 	add("extra_field", strings.TrimSuffix(f.EnvelopeJSON, "}")+`,"extra":true}`)
 	add("numeric_agent", change("a", 123))
 	add("numeric_record", change("r", 123))
-	add("numeric_ciphertext", change("c", 123))
+	add("numeric_ciphertext", change("g", 123))
 	add("empty_agent", change("a", ""))
 	add("empty_record", change("r", ""))
 	add("changed_agent", change("a", "fedcba9876543210fedcba9876543210"))
 	add("changed_record", change("r", "123e4567-e89b-42d3-a456-426614174001"))
-	add("invalid_base64", change("c", "!not-base64!"))
+	add("invalid_base64", change("g", "!not-base64!"))
 	var e struct {
-		C string `json:"c"`
+		C string `json:"g"`
 	}
 	if err := json.Unmarshal([]byte(f.EnvelopeJSON), &e); err != nil {
 		t.Fatal(err)
 	}
+	// Nonzero unused pad bits decode to the same bytes without Strict().
+	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+	if !strings.HasSuffix(e.C, "=") {
+		t.Fatal("fixture must exercise padded base64")
+	}
+	last := len(e.C) - 2
+	canonicalIndex := strings.IndexByte(alphabet, e.C[last])
+	add("noncanonical_base64_padding", change("g", e.C[:last]+string(alphabet[canonicalIndex+1])+e.C[last+1:]))
+	add("base64_newline", change("g", e.C[:8]+"\n"+e.C[8:]))
+	add("base64_carriage_return", change("g", e.C[:8]+"\r"+e.C[8:]))
 	raw, err := base64.StdEncoding.DecodeString(e.C)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, n := range []int{0, 1, 11, 12, 27, len(raw) - 1} {
-		add("truncated_"+strconv.Itoa(n), change("c", base64.StdEncoding.EncodeToString(raw[:n])))
+		add("truncated_"+strconv.Itoa(n), change("g", base64.StdEncoding.EncodeToString(raw[:n])))
 	}
 	for _, part := range []struct {
 		name   string
@@ -174,7 +184,7 @@ func TestDecryptMetadataV2RejectsInvalidInput(t *testing.T) {
 	}{{"nonce", 0}, {"ciphertext", 12}, {"tag", len(raw) - 1}} {
 		mutated := bytes.Clone(raw)
 		mutated[part.offset] ^= 1
-		add("changed_"+part.name, change("c", base64.StdEncoding.EncodeToString(mutated)))
+		add("changed_"+part.name, change("g", base64.StdEncoding.EncodeToString(mutated)))
 	}
 	// Changing both the caller context and envelope must still fail: IDs are AAD.
 	cases = append(cases,

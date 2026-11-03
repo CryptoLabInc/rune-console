@@ -147,14 +147,15 @@ func (e *Engine) Insert(ctx context.Context, vec []float32, sealedMeta string, f
 // PreEncryptedItem is a client-encrypted capture item the console forwards to
 // runespace verbatim: rune-mcp (which holds the PUBLIC EncKey + agent_dek)
 // produced the RMP/MM ciphertext, routed the IVF cluster, and sealed the
-// metadata, so the console holds no key for this path and does no crypto.
+// metadata. Console authenticates and validates metadata before forwarding;
+// this engine does not open the encrypted embedding.
 type PreEncryptedItem struct {
 	ID                 string
 	RMPBlob            []byte // SDK Keys.EncryptFlat output
 	MMBlob             []byte // SDK Keys.EncryptClustered output
 	ClusterID          uint32 // hard single IVF assignment, 0..nlist-1
 	CentroidSetVersion string // set version the assignment was routed against
-	SealedMetadata     string // client-sealed {"a","c"} envelope, stored verbatim
+	SealedMetadata     string // client-sealed {"v","a","r","g"} envelope, stored verbatim
 }
 
 // InsertPreEncrypted forwards a client-encrypted item to runespace verbatim
@@ -166,7 +167,7 @@ func (e *Engine) InsertPreEncrypted(ctx context.Context, it PreEncryptedItem, fi
 	if len(filterTags) > 0 {
 		opts = append(opts, runespace.WithFilterTags(filterTags...))
 	}
-	return e.client.InsertPreEncrypted(ctx, runespace.PreEncryptedItem{
+	err := e.client.InsertPreEncrypted(ctx, runespace.PreEncryptedItem{
 		ID:                 it.ID,
 		RMPBlob:            it.RMPBlob,
 		MMBlob:             it.MMBlob,
@@ -174,7 +175,14 @@ func (e *Engine) InsertPreEncrypted(ctx context.Context, it PreEncryptedItem, fi
 		CentroidSetVersion: it.CentroidSetVersion,
 		Metadata:           it.SealedMetadata,
 	}, opts...)
+	if errors.Is(err, runespace.ErrCentroidVersionMismatch) {
+		e.client.InvalidateCentroidCache()
+	}
+	return err
 }
+
+// ErrCentroidVersionMismatch lets the RPC layer preserve the client rebuild contract.
+var ErrCentroidVersionMismatch = runespace.ErrCentroidVersionMismatch
 
 // CentroidSet is the runespace IVF centroid set the console relays to rune-mcp,
 // which routes each vector's cluster locally before encrypting it.

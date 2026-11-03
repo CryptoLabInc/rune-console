@@ -250,6 +250,25 @@ func (c *Config) Redact() Config {
 	return out
 }
 
+// TeamSecretWarning detects obvious mistakes without rejecting existing
+// installations or restricting strong secrets to one encoding. Absence of a
+// warning is not an entropy assessment. The returned text never includes the key.
+func (c *Config) TeamSecretWarning() string {
+	secret := strings.TrimSpace(c.Tokens.TeamSecret)
+	var issue string
+	switch {
+	case secret == "":
+		issue = "blank"
+	case strings.HasPrefix(strings.ToLower(secret), "replace_with_"):
+		issue = "a placeholder"
+	case len(secret) < 32:
+		issue = "shorter than 32 bytes"
+	default:
+		return ""
+	}
+	return "console: weak team_secret (" + issue + "); use a high-entropy random secret for new deployments; changing an existing team secret without migration makes stored memories unreadable"
+}
+
 // Validate enforces invariants the daemon needs at startup.
 // Returns nil for fully populated configs.
 func (c *Config) Validate() error {

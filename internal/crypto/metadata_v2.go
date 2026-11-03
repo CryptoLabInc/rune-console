@@ -31,41 +31,67 @@ type MetadataV2Envelope struct {
 // Token-level parsing rejects duplicate fields before JSON can overwrite or
 // ignore earlier values (including a valid value followed by null).
 func ParseMetadataV2(envelopeJSON string) (MetadataV2Envelope, error) {
-	var envelope MetadataV2Envelope
-	invalid := errors.New("crypto: invalid metadata v2 envelope")
+	fields, err := ParseMetadataFields(envelopeJSON)
+	if err != nil {
+		return MetadataV2Envelope{}, err
+	}
+	return MetadataV2FromFields(fields)
+}
+
+// ParseMetadataFields parses one JSON object without discarding duplicate keys.
+// Callers can classify legacy/v2 once, then validate the appropriate envelope.
+func ParseMetadataFields(envelopeJSON string) (map[string]json.RawMessage, error) {
+	invalid := errors.New("crypto: invalid metadata envelope")
 	decoder := json.NewDecoder(strings.NewReader(envelopeJSON))
 	start, err := decoder.Token()
 	if err != nil || start != json.Delim('{') {
-		return envelope, invalid
+		return nil, invalid
 	}
 	fields := make(map[string]json.RawMessage, 4)
 	for decoder.More() {
 		token, err := decoder.Token()
 		if err != nil {
-			return envelope, invalid
+			return nil, invalid
 		}
 		name, ok := token.(string)
-		if !ok || (name != "v" && name != "a" && name != "r" && name != "c") {
-			return envelope, invalid
+		if !ok {
+			return nil, invalid
 		}
 		if _, duplicate := fields[name]; duplicate {
-			return envelope, invalid
+			return nil, invalid
 		}
 		var value json.RawMessage
-		if decoder.Decode(&value) != nil || string(value) == "null" {
-			return envelope, invalid
+		if decoder.Decode(&value) != nil {
+			return nil, invalid
 		}
 		fields[name] = value
 	}
 	end, err := decoder.Token()
 	var trailing json.RawMessage
-	if err != nil || end != json.Delim('}') || decoder.Decode(&trailing) != io.EOF || len(fields) != 4 {
+	if err != nil || end != json.Delim('}') || decoder.Decode(&trailing) != io.EOF {
+		return nil, invalid
+	}
+	return fields, nil
+}
+
+// MetadataV2FromFields validates the canonical v2 fields after duplicate-safe parsing.
+func MetadataV2FromFields(fields map[string]json.RawMessage) (MetadataV2Envelope, error) {
+	var envelope MetadataV2Envelope
+	invalid := errors.New("crypto: invalid metadata v2 envelope")
+	if len(fields) != 4 {
 		return envelope, invalid
 	}
+	for _, name := range []string{"v", "a", "r", "g"} {
+		value, ok := fields[name]
+		if !ok || string(value) == "null" {
+			return envelope, invalid
+		}
+	}
+
 	if json.Unmarshal(fields["v"], &envelope.Version) != nil ||
 		json.Unmarshal(fields["a"], &envelope.AgentID) != nil ||
 		json.Unmarshal(fields["r"], &envelope.RecordID) != nil ||
-		json.Unmarshal(fields["c"], &envelope.Ciphertext) != nil ||
+		json.Unmarshal(fields["g"], &envelope.Ciphertext) != nil ||
 		envelope.AgentID == "" || envelope.RecordID == "" || envelope.Ciphertext == "" {
 		return MetadataV2Envelope{}, invalid
 	}
@@ -79,13 +105,19 @@ func ParseMetadataV2(envelopeJSON string) (MetadataV2Envelope, error) {
 // It accepts only v2 envelopes; failures never return plaintext or fall back to
 // legacy decryption. Callers must obtain expected IDs from trusted context.
 func DecryptMetadataV2(envelopeJSON string, baseDEK []byte, expectedAgentID, expectedRecordID string) ([]byte, error) {
-	if expectedAgentID == "" || expectedRecordID == "" {
-		return nil, errors.New("crypto: metadata v2 expected identities are required")
-	}
 	envelope, err := ParseMetadataV2(envelopeJSON)
 	if err != nil {
 		return nil, err
 	}
+	return DecryptMetadataV2Envelope(envelope, baseDEK, expectedAgentID, expectedRecordID)
+}
+
+// DecryptMetadataV2Envelope opens an already parsed envelope against trusted IDs.
+func DecryptMetadataV2Envelope(envelope MetadataV2Envelope, baseDEK []byte, expectedAgentID, expectedRecordID string) ([]byte, error) {
+	if expectedAgentID == "" || expectedRecordID == "" || envelope.Version != 2 {
+		return nil, errors.New("crypto: metadata v2 expected identities and version are required")
+	}
+
 	if envelope.AgentID != expectedAgentID || envelope.RecordID != expectedRecordID {
 		return nil, errors.New("crypto: metadata v2 identity mismatch")
 	}
@@ -94,7 +126,9 @@ func DecryptMetadataV2(envelopeJSON string, baseDEK []byte, expectedAgentID, exp
 		return nil, err
 	}
 	raw, err := base64.StdEncoding.Strict().DecodeString(envelope.Ciphertext)
-	if err != nil {
+	// Strict checks unused pad bits; equality also rejects CR/LF, which the
+	// standard decoder otherwise ignores even in strict mode.
+	if err != nil || base64.StdEncoding.EncodeToString(raw) != envelope.Ciphertext {
 		return nil, errors.New("crypto: invalid metadata v2 encoding")
 	}
 	// Standard GCM uses a 12-byte nonce and a 16-byte authentication tag.

@@ -23,7 +23,7 @@ The Console includes both the Go daemon and an embedded React management UI. The
 - **Workspace lifecycle** — provision, connect, stop, start, and delete the organization's RuneSpace workspace.
 - **Members and invitations** — invite teammates, resend or cancel invitations, inspect connection state, and deactivate sessions.
 - **Teams and access** — build a hierarchical team structure and grant read, write, or edit roles.
-- **Key custody** — generate and retain the FHE key sets used to protect stored vectors and decrypt authorized results.
+- **Key custody** — generate and retain the FHE key sets used to protect stored vectors and decrypt search results within the trusted Console.
 - **Agent onboarding** — issue single-use `runev1_…` registration strings with a pinned Console CA.
 - **Auditability** — retain daemon and security-relevant operation logs with local rotation.
 
@@ -92,16 +92,18 @@ New members do not receive implicit write access. Add them to an appropriate tea
 
 ## Back up the trust boundary
 
-The Console key directory and configuration are not disposable. Losing the FHE secret keys makes existing encrypted memories permanently unreadable.
+Console recovery requires keys **and persistent state**, not just a replacement
+binary. Stop Console and take a consistent, encrypted, access-controlled backup
+of the default `/opt/runeconsole` tree plus any configured paths outside it.
+Include `runeconsole.db` (membership, tokens, and the metadata v2 ID registry),
+`console-session.db` (cloud sessions, owner bindings, and data-plane credentials),
+configuration/team secret, HE keys, and TLS CA/key material. This does not back up data stored in external RuneSpace.
 
-Back up at least these paths with an encrypted, access-controlled system:
-
-```text
-/opt/runeconsole/rune-console-keys/
-/opt/runeconsole/configs/runeconsole.conf
-```
-
-Keep backups outside the Console host and test restoration before relying on them. Do not use `--force` during recovery unless you have confirmed that the existing keys and configuration are preserved.
+Keep backups outside the host and test restoration. Losing keys can make records
+unreadable; losing or rolling back the registry weakens downgrade protection.
+Do not use `--force` or replace the VM during recovery without preserving this
+state. See the [coordinated upgrade guide](docs/security-upgrade.md) for cloud
+startup scripts, rollback limits, and legacy data handling.
 
 ## Configuration
 
@@ -117,12 +119,16 @@ TLS is mandatory for the agent-facing gRPC endpoint. The local management surfac
 
 ## Security and upgrade notes
 
-Stored item vectors are encrypted; recall query vectors are plaintext to Console
-and RuneSpace. Console holds HE secret keys and payload keys and can open
-authorized content. Read the [security boundary and coordinated upgrade guide](docs/security-upgrade.md)
-for pending authenticated-metadata v2 changes, legacy read policy, and the
-maintenance window required when upgrading Console before MCP clients. Existing
-installer downloads are not evidence that these pending changes are released.
+Stored item vectors are encrypted; recall query vectors remain plaintext to
+Console and RuneSpace. Console operators and host root are trusted. Payload
+GCM authentication binds agent/record IDs, but does not attest a human author or
+prove that a storage service correctly enforced the requested scope.
+
+Read the [security boundary and coordinated upgrade guide](docs/security-upgrade.md)
+and [wire specification](docs/metadata-envelope-v2.md) for the pending v2 changes,
+legacy exclusions, key custody, and recovery requirements. These source changes
+are not yet established as released. Existing installers and pinned MCP v1.0.0
+clients do not acquire capture-privacy fixes merely by updating this README.
 
 ## Development
 

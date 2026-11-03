@@ -51,6 +51,9 @@ func runDaemonStart(ctx context.Context) error {
 	if err := cfg.Validate(); err != nil {
 		return err
 	}
+	if warning := cfg.TeamSecretWarning(); warning != "" {
+		slog.Warn(warning)
+	}
 
 	// Unified store database (runeconsole.db): opened unconditionally at boot
 	// with the hardened posture (fail-closed 0600 perms, per-commit fsync,
@@ -145,6 +148,9 @@ func runDaemonStart(ctx context.Context) error {
 	// configured". v.Close() releases the engine if one was connected.
 	v := server.NewConsole(cfg, store, groupStore, nil, audit)
 	defer v.Close()
+	if err := v.SetMetadataRegistry(storeDB); err != nil {
+		return fmt.Errorf("daemon: %w", err)
+	}
 	// Wire the dataplane member-status gate + judge-key resolver to the member
 	// registry: a token whose user is a DISABLED member is denied on the gRPC
 	// surface even if the token itself still validates (defense in depth for
@@ -168,6 +174,9 @@ func runDaemonStart(ctx context.Context) error {
 	// one, the gRPC ConsoleService reports "runespace not configured".
 	slog.Warn("console: runespace not connected — data-plane RPCs report 'runespace not configured' until a session provisions one")
 
+	if cfg.AllowLegacyMetadataRead {
+		slog.Warn("console: legacy metadata reads enabled; IDs absent from the local v2 registry may be substituted with unauthenticated legacy data, including historical v2 records; registered v2 IDs require authenticated v2 metadata")
+	}
 	slog.Info("console: starting daemon",
 		"pid", os.Getpid(),
 		"config", cfg.Source,

@@ -23,8 +23,9 @@ service ConsoleService {
 
   // Capture write (pre-encrypted): rune-mcp sends the FHE-encrypted RMP+MM
   // blobs, the IVF cluster assignment, and the sealed metadata; the console
-  // forwards them verbatim to runespace (SDK InsertPreEncrypted) — it holds no
-  // key for this path and performs no encryption.
+  // authenticates metadata against the token agent and request ID, validates
+  // the decrypted Record, and forwards ciphertext verbatim to runespace.
+  // Invalid metadata is InvalidArgument; clients lacking v2 must upgrade.
   rpc Insert(InsertRequest) returns (InsertResponse);
 
   // Streams the runespace IVF centroid set (header + id-ordered batches) so
@@ -32,10 +33,12 @@ service ConsoleService {
   // cheap version pointer is in GetAgentManifest; fetch this only on mismatch.
   rpc GetCentroids(GetCentroidsRequest) returns (stream CentroidChunk);
 
-  // Blind vector search over runespace (recall + capture-time novelty check).
+  // Blind vector search over runespace (recall).
   // The plaintext query is sent to runespace (PCMM); the console decrypts the
   // score blobs (SecKey), ranks, resolves and opens metadata (agent_dek), and
-  // returns ranked plaintext hits.
+  // returns ranked plaintext hits. Missing metadata on unregistered IDs and
+  // policy-excluded legacy hits are omitted. Invalid v2 metadata or missing
+  // v2 metadata on a registered v2 ID fails the whole search with DataLoss.
   rpc Search(SearchRequest) returns (SearchResponse);
 
   // Returns the caller's own memberships and the depth-annotated group tree
@@ -91,7 +94,7 @@ message GetAgentManifestResponse {
   //    "rmp_enc_key": "<RMP (flat) EncKey envelope, verbatim JSON>",
   //    "mm_enc_key":  "<MM (clustered) EncKey envelope, verbatim JSON>",
   //    "agent_dek":   "<base64 32-byte metadata seal key>",
-  //    "centroid_set_version": "..."}
+  //    "centroid_set_version": "...", "capabilities": ["metadata_envelope_v2"]}
   // The PUBLIC EncKey pair + agent_dek travel here; SecKey never does.
   string manifest_json = 1;
   string error = 2;  // Non-empty on error
@@ -125,12 +128,15 @@ message InsertRequest {
   // The centroid-set version the assignment was routed against. Required so the
   // server can reject a stale routing (ErrCentroidVersionMismatch).
   string centroid_set_version = 6 [(buf.validate.field).string.min_len = 1];
-  // Client-sealed metadata envelope ({"a","c"}), stored verbatim; may be empty.
-  string metadata = 7;
+  // Authenticated metadata envelope {"v":2,"a","r","g"}, stored verbatim.
+  // r must equal id; a must match the authenticated token. g contains padded
+  // standard-base64 nonce || GCM ciphertext || tag. Empty legacy submissions
+  // receive explicit upgrade guidance. Envelope limit is bytes, not characters.
+  string metadata = 7 [(buf.validate.field).string.max_bytes = 2097152];
 }
 
 message InsertResponse {
-  string id = 1;     // runespace-issued opaque id
+  string id = 1;     // caller-generated opaque id, echoed after acceptance
   string error = 2;  // Non-empty on error
 }
 
@@ -166,7 +172,7 @@ message Centroid {
   repeated float vec = 2;  // centroid vector
 }
 
-// ─── Search (recall + novelty) ────────────────────────────────────
+// ─── Search (recall) ────────────────────────────────────
 
 message SearchRequest {
   // Auth token. Required, fixed 36 chars.
@@ -180,7 +186,7 @@ message SearchRequest {
 message SearchHit {
   string id = 1;
   double score = 2;
-  string metadata = 3;  // plaintext JSON (console opened the agent_dek envelope)
+  string metadata = 3;  // validated UTF-8 Record JSON; legacy compatibility reads are unauthenticated
 }
 
 message SearchResponse {

@@ -20,7 +20,7 @@ aad = json.dumps(["rune-metadata", "2", agent_id, record_id], separators=(",", "
 plaintext = '{"title":"public fixture","description":"메타데이터 🔒","count":2}'.encode()
 ciphertext_tag = AESGCM(derived_key).encrypt(nonce, plaintext, aad)
 envelope = json.dumps({"v": 2, "a": agent_id, "r": record_id,
-                       "c": base64.b64encode(nonce + ciphertext_tag).decode()}, separators=(",", ":"))
+                       "g": base64.b64encode(nonce + ciphertext_tag).decode()}, separators=(",", ":"))
 fixture = {"notice": "NON-SECRET fixed interoperability test vector; never use these keys/nonces in production",
            "base_key_hex": base_key.hex(), "derived_key_hex": derived_key.hex(),
            "nonce_hex": nonce.hex(), "aad_hex": aad.hex(), "plaintext": plaintext.decode(),

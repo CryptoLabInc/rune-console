@@ -53,7 +53,7 @@ func TestEnsureSchemaIdempotent(t *testing.T) {
 
 	for _, table := range []string{
 		"schema_migrations", "members", "invites",
-		"tokens", "groups", "memberships", "read_exclusions",
+		"tokens", "groups", "memberships", "read_exclusions", "metadata_v2_records",
 	} {
 		var name string
 		err := database.QueryRow(
@@ -74,11 +74,11 @@ func TestEnsureSchemaIdempotent(t *testing.T) {
 	}
 }
 
-// ledgerRow reads the single schema_migrations row.
+// ledgerRow reads the original schema migration row.
 func ledgerRow(t *testing.T, database *sql.DB) (version int, appliedAt, description string) {
 	t.Helper()
 	if err := database.QueryRow(
-		`SELECT version, applied_at, description FROM schema_migrations`,
+		`SELECT version, applied_at, description FROM schema_migrations WHERE version = 1`,
 	).Scan(&version, &appliedAt, &description); err != nil {
 		t.Fatalf("read ledger row: %v", err)
 	}
@@ -86,14 +86,14 @@ func ledgerRow(t *testing.T, database *sql.DB) (version int, appliedAt, descript
 }
 
 // TestEnsureSchemaRecordsMigrationOnce pins the runner's ledger bookkeeping: a
-// freshly ensured database records exactly one row for the one migration (001),
+// freshly ensured database records each migration once,
 // and a second boot finds nothing pending — it neither duplicates nor rewrites
-// that row.
+// the original row.
 func TestEnsureSchemaRecordsMigrationOnce(t *testing.T) {
 	database := ensureTestSchema(t)
 
-	if n := countRows(t, database, "schema_migrations"); n != 1 {
-		t.Fatalf("schema_migrations rows = %d, want exactly 1 (the applied migration)", n)
+	if n := countRows(t, database, "schema_migrations"); n != 2 {
+		t.Fatalf("schema_migrations rows = %d, want exactly 2 (the applied migrations)", n)
 	}
 	version, appliedAt, description := ledgerRow(t, database)
 	if version != 1 {
@@ -119,8 +119,8 @@ func TestEnsureSchemaRecordsMigrationOnce(t *testing.T) {
 		t.Fatalf("second EnsureSchema: %v", err)
 	}
 
-	if n := countRows(t, database, "schema_migrations"); n != 1 {
-		t.Errorf("schema_migrations rows after second EnsureSchema = %d, want 1", n)
+	if n := countRows(t, database, "schema_migrations"); n != 2 {
+		t.Errorf("schema_migrations rows after second EnsureSchema = %d, want 2", n)
 	}
 	if _, appliedAt2, _ := ledgerRow(t, database); appliedAt2 != sentinel {
 		t.Errorf("applied_at = %q, want the untouched %q — the runner re-recorded an applied migration",
@@ -147,8 +147,8 @@ func TestEnsureSchemaLeavesAppliedRowUntouched(t *testing.T) {
 		t.Fatalf("EnsureSchema over an applied ledger: %v", err)
 	}
 
-	if n := countRows(t, database, "schema_migrations"); n != 1 {
-		t.Fatalf("schema_migrations rows = %d, want 1 — an applied version must not be re-recorded", n)
+	if n := countRows(t, database, "schema_migrations"); n != 2 {
+		t.Fatalf("schema_migrations rows = %d, want 2 — an applied version must not be re-recorded", n)
 	}
 	if _, _, description := ledgerRow(t, database); description != oldBaseline {
 		t.Errorf("description = %q, want the untouched %q — the runner restamped an applied version",
