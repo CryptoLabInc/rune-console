@@ -617,8 +617,9 @@ func TestConsoleTeamDeletePurge(t *testing.T) {
 	if status != http.StatusNoContent {
 		t.Fatalf("purge delete status=%d body=%s", status, body)
 	}
-	if fake.removedTag != id {
-		t.Errorf("RemoveTag called with %q, want team id %q", fake.removedTag, id)
+	// Purge must not rewrite record tags.
+	if fake.retagFrom != "" || fake.retagTo != "" {
+		t.Errorf("purge retagged records (%q -> %q); it must leave tags alone", fake.retagFrom, fake.retagTo)
 	}
 	// Team is gone.
 	if status, _ := f.do(t, http.MethodGet, "/teams/"+id, ""); status != http.StatusNotFound {

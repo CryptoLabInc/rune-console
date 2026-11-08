@@ -17,11 +17,9 @@ type consoleEngine interface {
 	Search(ctx context.Context, vec []float32, topK int, filterScope ...string) ([]crypto.SearchHit, error)
 	GetTagStats(ctx context.Context, tags []string) ([]crypto.TagStat, error)
 	PurgeTag(ctx context.Context, tag string) (crypto.PurgeResult, error)
-	// RemoveTag strips a tag from every item (console team-delete "purge");
 	// RetagAll reassigns items from one tag to another (team-delete
-	// "transfer"). Both are shipped SDK calls, distinct from the stubbed
+	// "transfer"). It is a shipped SDK call, distinct from the stubbed
 	// PurgeTag/GetTagStats above.
-	RemoveTag(ctx context.Context, tag string) (uint64, error)
 	RetagAll(ctx context.Context, from, to string) (uint64, error)
 	Close() error
 }
