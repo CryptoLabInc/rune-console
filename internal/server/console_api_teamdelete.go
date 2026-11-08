@@ -11,9 +11,10 @@ import (
 // with nothing deleted), then the team and its memberships are removed:
 //   - transfer: reassign every record tagged with this team to targetTeamId
 //     (runespace RetagAll), then delete.
-//   - purge: strip this team's tag from every record (runespace RemoveTag) —
-//     the memory itself is not destroyed, and records shared with other teams
-//     stay reachable there — then delete.
+//   - purge: delete the team without touching record tags. Group IDs are
+//     never reissued, so once the team is gone its tag matches no recall
+//     scope: records tagged only with this team become unreachable, and
+//     records shared with other teams stay reachable there.
 //
 // Child teams block deletion (TEAM_HAS_CHILDREN); the wireframe routes that to
 // an alert. Members do NOT block: the design doc allows deleting a team with
@@ -58,12 +59,7 @@ func (h *consoleAPI) deleteTeam(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case "purge":
-		if _, perr := h.v.RemoveGroupTag(r.Context(), detail.ID, actor); perr != nil {
-			slog.Error("console: team memory purge failed",
-				"team", detail.ID, "actor", actor, "err", perr)
-			apiErr(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to purge team memory")
-			return
-		}
+		// No runespace call: see the doc comment above.
 	default:
 		apiErr(w, http.StatusBadRequest, "VALIDATION_ERROR", "memoryAction must be transfer or purge")
 		return

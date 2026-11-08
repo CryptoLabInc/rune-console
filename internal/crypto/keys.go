@@ -290,16 +290,6 @@ func (e *Engine) PurgeTag(_ context.Context, _ string) (PurgeResult, error) {
 	return PurgeResult{}, ErrPurgeTagUnsupported
 }
 
-// RemoveTag strips a single tag from every live item that carries it and
-// returns the number of items changed. It backs the console team-delete
-// "purge" memory action (remove this team's tag — the memory itself is not
-// destroyed, and records shared with other teams stay reachable there). Unlike
-// the stubbed PurgeTag above, this is a direct, shipped SDK call
-// (runespace RemoveTag RPC): the SDK/runespace side owns the sole-tag policy.
-func (e *Engine) RemoveTag(ctx context.Context, tag string) (uint64, error) {
-	return e.client.RemoveTag(ctx, tag)
-}
-
 // RetagAll reassigns every item tagged `from` to `to` and returns the number
 // of items moved. It backs the console team-delete "transfer" memory action
 // (reassign a deleted team's memory to another team). Direct SDK call

@@ -319,27 +319,6 @@ func (v *Console) PurgeGroupTag(ctx context.Context, tag, actor string) string {
 	return detail
 }
 
-// RemoveGroupTag strips a group's tag off every record that carries it — the
-// console team-delete "purge" memory action. Unlike PurgeGroupTag (best-effort
-// post-delete sweep of a dead UUID), this runs as part of the delete
-// transaction and its failure MUST propagate so the caller can roll back
-// (the doc mandates all-or-nothing memory handling). Returns the number of
-// records the tag was removed from. Fails if no engine is attached.
-func (v *Console) RemoveGroupTag(ctx context.Context, tag, actor string) (uint64, error) {
-	eng, ok := v.getEngine()
-	if !ok {
-		v.auditTagCleanup(actor, "failed", "no runespace engine attached", tag)
-		return 0, fmt.Errorf("no runespace engine attached")
-	}
-	n, err := eng.RemoveTag(ctx, tag)
-	if err != nil {
-		v.auditTagCleanup(actor, "failed", fmt.Sprintf("purge tag failed: %v", err), tag)
-		return 0, err
-	}
-	v.auditTagCleanup(actor, "success", fmt.Sprintf("purge: removed tag from %d records", n), tag)
-	return n, nil
-}
-
 // ReassignGroupTag moves every record tagged `from` to `to` — the console
 // team-delete "transfer" memory action (reassign a deleted team's memory to a
 // target team). Runs inside the delete transaction; failure propagates for

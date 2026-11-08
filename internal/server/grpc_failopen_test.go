@@ -27,14 +27,11 @@ type fakeEngine struct {
 	purgeRes  crypto.PurgeResult
 	purgeErr  error
 
-	// RemoveTag / RetagAll observation/knobs (console team-delete memory action).
-	removedTag  string
-	removeCount uint64
-	removeErr   error
-	retagFrom   string
-	retagTo     string
-	retagCount  uint64
-	retagErr    error
+	// RetagAll observation/knobs (console team-delete memory action).
+	retagFrom  string
+	retagTo    string
+	retagCount uint64
+	retagErr   error
 }
 
 func (f *fakeEngine) InsertPreEncrypted(_ context.Context, it crypto.PreEncryptedItem, filterTags ...string) error {
@@ -61,11 +58,6 @@ func (f *fakeEngine) GetTagStats(_ context.Context, _ []string) ([]crypto.TagSta
 func (f *fakeEngine) PurgeTag(_ context.Context, tag string) (crypto.PurgeResult, error) {
 	f.purgedTag = tag
 	return f.purgeRes, f.purgeErr
-}
-
-func (f *fakeEngine) RemoveTag(_ context.Context, tag string) (uint64, error) {
-	f.removedTag = tag
-	return f.removeCount, f.removeErr
 }
 
 func (f *fakeEngine) RetagAll(_ context.Context, from, to string) (uint64, error) {
