@@ -30,9 +30,9 @@ type Deps struct {
 	DB         *sql.DB
 	// DomainHandler is the /api/v1 domain surface (teams, users, memberships,
 	// invitations) built by internal/server with direct RBAC-store access. It is
-	// mounted origin + session gated, with the /api/v1 prefix stripped and the
-	// authenticated operator injected as the audit actor. Nil leaves the domain
-	// routes returning 501 (skeleton).
+	// mounted origin, session and owner gated, with the /api/v1 prefix stripped
+	// and the authenticated operator injected as the audit actor. Nil leaves the
+	// domain routes returning 501 (skeleton).
 	DomainHandler http.Handler
 	// Connector attaches the dialed runespace engine to the gRPC server. When
 	// set, the data-plane manager + /api/v1/workspace endpoints are mounted;
@@ -175,14 +175,18 @@ func NewHandler(d Deps) (http.Handler, *Dataplane, error) {
 	// not 401.
 	mux.Handle("POST /console/auth/logout", s.origin(http.HandlerFunc(s.handleLogout)))
 
-	// Self-update endpoints are loopback-only, same-origin, session-gated, and
-	// explicitly owner-gated. Applying an update is only an asynchronous request
+	// Every /api/v1 route is same-origin, session-gated and owner-gated. A
+	// signed-in account that is not the console owner keeps its session (GET
+	// /console/session reports is_owner:false for the owner-locked notice) but
+	// gets 403 OWNER_REQUIRED here.
+	ownerOnly := func(h http.Handler) http.Handler {
+		return s.origin(s.requireSession(s.requireOwner(h)))
+	}
+
+	// Self-update endpoints. Applying an update is only an asynchronous request
 	// to the separately installed root helper; the HTTP daemon never elevates or
 	// stops itself.
 	if s.updates != nil {
-		ownerOnly := func(h http.Handler) http.Handler {
-			return s.origin(s.requireSession(s.requireOwner(h)))
-		}
 		mux.Handle("GET /api/v1/system/update", ownerOnly(http.HandlerFunc(s.handleUpdateStatus)))
 		mux.Handle("POST /api/v1/system/update", ownerOnly(http.HandlerFunc(s.handleUpdateRequest)))
 	}
@@ -190,21 +194,22 @@ func NewHandler(d Deps) (http.Handler, *Dataplane, error) {
 	// Workspace (data-plane) endpoints: provision + connect the runespace
 	// engine, and report status. Mounted only when a connector is wired.
 	if dp != nil {
-		mux.Handle("POST /api/v1/workspace", s.origin(s.requireSession(http.HandlerFunc(s.handleWorkspaceConnect))))
-		mux.Handle("GET /api/v1/workspace", s.origin(s.requireSession(http.HandlerFunc(s.handleWorkspaceStatus))))
-		mux.Handle("DELETE /api/v1/workspace", s.origin(s.requireSession(http.HandlerFunc(s.handleWorkspaceDelete))))
-		mux.Handle("POST /api/v1/workspace/stop", s.origin(s.requireSession(http.HandlerFunc(s.handleWorkspaceStop))))
-		mux.Handle("POST /api/v1/workspace/start", s.origin(s.requireSession(http.HandlerFunc(s.handleWorkspaceStart))))
+		mux.Handle("POST /api/v1/workspace", ownerOnly(http.HandlerFunc(s.handleWorkspaceConnect)))
+		mux.Handle("GET /api/v1/workspace", ownerOnly(http.HandlerFunc(s.handleWorkspaceStatus)))
+		mux.Handle("DELETE /api/v1/workspace", ownerOnly(http.HandlerFunc(s.handleWorkspaceDelete)))
+		mux.Handle("POST /api/v1/workspace/stop", ownerOnly(http.HandlerFunc(s.handleWorkspaceStop)))
+		mux.Handle("POST /api/v1/workspace/start", ownerOnly(http.HandlerFunc(s.handleWorkspaceStart)))
 	}
 
 	// Self-invite (connection-test) endpoint: issues a registration string for
 	// the operator and mails it via the cloud public API. Mounted only when an
 	// issuer is wired.
 	if s.inviter != nil {
-		mux.Handle("POST /api/v1/invite", s.origin(s.requireSession(http.HandlerFunc(s.handleInvite))))
+		mux.Handle("POST /api/v1/invite", ownerOnly(http.HandlerFunc(s.handleInvite)))
 	}
 
-	// Domain API (origin + cookie gated): teams, users, memberships, invitations.
+	// Domain API (origin, cookie and owner gated): teams, users, memberships,
+	// invitations.
 	// The specific /api/v1/workspace* and /api/v1/invite routes above take
 	// precedence (Go 1.22 pattern specificity); this subtree handles the rest.
 	// The /api/v1 prefix is stripped so the mounted mux sees /teams/tree etc.,
@@ -212,9 +217,9 @@ func NewHandler(d Deps) (http.Handler, *Dataplane, error) {
 	// session cookie for the invite relay). When no domain handler is wired the
 	// group falls back to the 501 skeleton.
 	if d.DomainHandler != nil {
-		mux.Handle("/api/v1/", s.origin(s.requireSession(s.withOperator(http.StripPrefix("/api/v1", d.DomainHandler)))))
+		mux.Handle("/api/v1/", ownerOnly(s.withOperator(http.StripPrefix("/api/v1", d.DomainHandler))))
 	} else {
-		mux.Handle("/api/v1/", s.origin(s.requireSession(http.HandlerFunc(apiNotImplemented))))
+		mux.Handle("/api/v1/", ownerOnly(http.HandlerFunc(apiNotImplemented)))
 	}
 
 	return mux, dp, nil

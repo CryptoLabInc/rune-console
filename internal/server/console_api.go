@@ -75,10 +75,11 @@ type consoleAPI struct {
 
 // NewConsoleAPIHandler builds the /api/v1 domain surface (teams, team members,
 // users, memberships, invitations) described by the console API design doc. It
-// is mounted (origin + session gated, prefix-stripped) at /api/v1/ on the
-// console listener by the daemon; the caller wraps it so the paths this handler
-// sees are already stripped of the /api/v1 prefix. A nil member store omits the
-// member-backed routes (users/memberships/invitations), leaving only teams.
+// is mounted (origin, session and owner gated, prefix-stripped) at /api/v1/ on
+// the console listener by the daemon; the caller wraps it so the paths this
+// handler sees are already stripped of the /api/v1 prefix. A nil member store
+// omits the member-backed routes (users/memberships/invitations), leaving only
+// teams.
 func NewConsoleAPIHandler(v *Console, m *members.Store, i *invites.Store, mailer Mailer, conn InviteConnInfo, ttl time.Duration) http.Handler {
 	var ms *memberSubsystem
 	if m != nil {
