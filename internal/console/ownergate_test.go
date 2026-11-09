@@ -34,9 +34,10 @@ type ownerGateFixture struct {
 
 // newOwnerGateFixture mounts every /api/v1 surface and logs in twice through
 // the real callback: alice claims the console, bob is a later non-owner login.
+// tokA2 is alice's account as the cloud may spell it on a later login.
 func newOwnerGateFixture(t *testing.T) *ownerGateFixture {
 	t.Helper()
-	ts := mockLoginCloud(t, map[string]string{"tokA": "alice@x.io", "tokB": "bob@x.io"})
+	ts := mockLoginCloud(t, map[string]string{"tokA": "alice@x.io", "tokA2": "Alice@X.IO", "tokB": "bob@x.io"})
 	f := &ownerGateFixture{db: openTestDB(t), conn: &fakeConnector{}, inviter: &recordingInviter{}}
 	h, dp, err := NewHandler(Deps{
 		Port:       8787,
@@ -66,7 +67,9 @@ func newOwnerGateFixture(t *testing.T) *ownerGateFixture {
 
 func (f *ownerGateFixture) do(method, path, cookie string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(method, path, nil) // same-origin
-	req.AddCookie(&http.Cookie{Name: cookieName, Value: cookie})
+	if cookie != "" {
+		req.AddCookie(&http.Cookie{Name: cookieName, Value: cookie})
+	}
 	rr := httptest.NewRecorder()
 	f.h.ServeHTTP(rr, req)
 	return rr
@@ -114,6 +117,34 @@ func TestAPIRoutesRejectNonOwnerSession(t *testing.T) {
 	}
 }
 
+func TestAPIRoutesKeepOriginAndSessionChecks(t *testing.T) {
+	f := newOwnerGateFixture(t)
+	for _, rt := range ownerOnlyRoutes {
+		for _, site := range []string{"cross-site", "same-site"} {
+			req := httptest.NewRequest(rt.method, rt.path, nil)
+			req.Header.Set("Sec-Fetch-Site", site)
+			req.AddCookie(&http.Cookie{Name: cookieName, Value: f.owner})
+			rr := httptest.NewRecorder()
+			f.h.ServeHTTP(rr, req)
+			if rr.Code != http.StatusForbidden || decodeErrorBody(t, rr)["code"] != "ORIGIN_FORBIDDEN" {
+				t.Errorf("%s %s as owner from %s: status = %d, want 403 ORIGIN_FORBIDDEN", rt.method, rt.path, site, rr.Code)
+			}
+		}
+		if rr := f.do(rt.method, rt.path, ""); rr.Code != http.StatusUnauthorized || decodeErrorBody(t, rr)["code"] != "SESSION_INVALID" {
+			t.Errorf("%s %s without a session: status = %d, want 401 SESSION_INVALID", rt.method, rt.path, rr.Code)
+		}
+	}
+	if n := f.domain.Load(); n != 0 {
+		t.Errorf("domain handler reached %d times without a same-origin session", n)
+	}
+	if c, d := f.conn.calls.Load(), f.conn.disconnects.Load(); c != 0 || d != 0 {
+		t.Errorf("engine connects=%d disconnects=%d, want 0/0", c, d)
+	}
+	if n := f.inviter.issued.Load(); n != 0 {
+		t.Errorf("self-invite issued %d times, want 0", n)
+	}
+}
+
 func TestAPIRoutesAdmitOwnerSession(t *testing.T) {
 	f := newOwnerGateFixture(t)
 	for _, path := range []string{"/api/v1/teams/tree", "/api/v1/users", "/api/v1/not-a-route"} {
@@ -121,8 +152,15 @@ func TestAPIRoutesAdmitOwnerSession(t *testing.T) {
 			t.Errorf("GET %s as owner: status = %d, want 204 from the domain handler", path, rr.Code)
 		}
 	}
-	if n := f.domain.Load(); n != 3 {
-		t.Errorf("domain handler reached %d times by the owner, want 3", n)
+	drift := sessionCookieValue(doLogin(t, f.h, "tokA2"))
+	if drift == "" {
+		t.Fatal("owner login spelled Alice@X.IO set no session cookie")
+	}
+	if rr := f.do(http.MethodGet, "/api/v1/teams/tree", drift); rr.Code != http.StatusNoContent {
+		t.Errorf("GET /api/v1/teams/tree as the owner spelled Alice@X.IO: status = %d, want 204", rr.Code)
+	}
+	if n := f.domain.Load(); n != 4 {
+		t.Errorf("domain handler reached %d times by the owner, want 4", n)
 	}
 	if rr := f.do(http.MethodPost, "/api/v1/invite", f.owner); rr.Code == http.StatusForbidden {
 		t.Errorf("POST /api/v1/invite as owner: status 403, want the request to reach the issuer")

@@ -176,7 +176,8 @@ func runDaemonStart(ctx context.Context) error {
 
 	// Domain API handler (teams, users, memberships, invitations) — the design
 	// doc's /api/v1 surface and the sole cookie-gated management surface; mounted
-	// origin + session gated under /api/v1/ with the operator injected as actor.
+	// origin, session and owner gated under /api/v1/ with the operator injected
+	// as actor.
 	domainHandler := server.NewConsoleAPIHandler(v, memberStore, inviteStore, mailer, inviteConn, cfg.InviteTTL())
 
 	// Console BFF HTTP handler (loopback auth + SPA + cookie-gated /api/v1),
