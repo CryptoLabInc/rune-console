@@ -1,12 +1,37 @@
 package console
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
+
+// ownerSessionCookie binds the console owner and mints a session for that
+// account, since every /api/v1 route requires the owner.
+func ownerSessionCookie(t *testing.T, database *sql.DB) *http.Cookie {
+	t.Helper()
+	const email = "owner@example.com"
+	me := json.RawMessage(`{"email":"` + email + `"}`)
+	owners, err := newOwnerStore(database, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := owners.bindIfAbsent(email, me); err != nil {
+		t.Fatal(err)
+	}
+	sessions, err := newSessionStore(database, slog.Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+	sess, err := sessions.create("cloud-session-token", "rc_cloud", me)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &http.Cookie{Name: cookieName, Value: sess.ID}
+}
 
 // newWorkspaceHarness stands up the full console handler against a mock cloud
 // with the data-plane routes mounted (Connector wired) and a logged-in session
@@ -26,15 +51,7 @@ func newWorkspaceHarness(t *testing.T, cloudURL string) (http.Handler, *Dataplan
 		t.Fatal(err)
 	}
 	t.Cleanup(dp.Stop)
-	sessions, err := newSessionStore(db, slog.Default())
-	if err != nil {
-		t.Fatal(err)
-	}
-	sess, err := sessions.create("cloud-session-token", "rc_cloud", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return h, dp, &http.Cookie{Name: cookieName, Value: sess.ID}
+	return h, dp, ownerSessionCookie(t, db)
 }
 
 // decodeErrorBody unmarshals the {code,message} error envelope.
@@ -133,15 +150,7 @@ func TestWorkspaceStatusOrphaned(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(dp.Stop)
-		sessions, err := newSessionStore(db, slog.Default())
-		if err != nil {
-			t.Fatal(err)
-		}
-		sess, err := sessions.create("cloud-session-token", "rc_cloud", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return h, &http.Cookie{Name: cookieName, Value: sess.ID}
+		return h, ownerSessionCookie(t, db)
 	}
 	statusView := func(t *testing.T, h http.Handler, cookie *http.Cookie) (int, map[string]any) {
 		t.Helper()
